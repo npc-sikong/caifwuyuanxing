@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>财务运营后台演示版</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <div class="brand-mark">FIN</div>
+          <div class="brand-text">
+            <div class="brand-title">财务运营后台</div>
+            <div class="brand-subtitle">静态演示版</div>
+          </div>
+          <button class="icon-button sidebar-collapse" id="sidebarCollapse" type="button" title="收起菜单" aria-label="收起菜单">‹</button>
+        </div>
+        <nav class="menu" id="menu"></nav>
+      </aside>
+
+      <div class="workspace">
+        <header class="topbar">
+          <button class="icon-button mobile-menu" id="menuToggle" type="button" title="展开菜单">☰</button>
+          <div>
+            <div class="breadcrumb" id="breadcrumb">工作台 / 财务总览</div>
+            <div class="topbar-title" id="pageTitle">财务总览</div>
+          </div>
+          <div class="global-search">
+            <input id="globalSearch" type="search" placeholder="搜索模块、表名或场景" />
+            <button class="btn" type="button" data-action="global-search">搜索</button>
+          </div>
+          <div class="topbar-actions">
+            <span class="env-pill role">当前角色：财务运营总监</span>
+            <span class="env-pill">无真实 API</span>
+            <span class="env-pill muted">Mock 数据</span>
+          </div>
+        </header>
+
+        <main class="content" id="app"></main>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <header class="modal-header">
+          <h2 id="modalTitle">弹窗</h2>
+          <button class="icon-button" id="modalClose" type="button" title="关闭">×</button>
+        </header>
+        <div class="modal-body" id="modalBody"></div>
+        <footer class="modal-footer" id="modalFooter"></footer>
+      </section>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
