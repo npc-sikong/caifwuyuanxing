@@ -1566,6 +1566,9 @@ function initData() {
   });
   const savedData = loadDemoData();
   appState.data = { ...seedData, ...savedData };
+  Object.entries(moduleCatalog).forEach(([key, mod]) => {
+    appState.data[key] = (appState.data[key] || []).map((item, index) => normalizeRow(key, mod, { ...(seedData[key]?.[index] || {}), ...item }, index));
+  });
   appState.auditTrail = loadAuditTrail();
   syncAuditLogModule();
 }
