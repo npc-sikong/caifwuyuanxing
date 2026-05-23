@@ -1781,6 +1781,29 @@ th.sticky-action {
   font-size: 15px;
 }
 
+.state-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.state-flow span {
+  border: 1px solid var(--line);
+  background: var(--panel-soft);
+  border-radius: 999px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 10px;
+}
+
+.state-flow span.active {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: var(--primary);
+}
+
 .detail-item {
   border: 1px solid var(--line-soft);
   background: var(--panel-soft);
@@ -1796,6 +1819,112 @@ th.sticky-action {
 
 .detail-value {
   word-break: break-word;
+}
+
+.diff-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.diff-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.diff-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--line-soft);
+  padding: 10px 12px;
+}
+
+.diff-card-head span {
+  color: var(--red);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-weight: 800;
+}
+
+.diff-card-body {
+  padding: 10px 12px;
+}
+
+.diff-card-body p {
+  margin: 0 0 6px;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.audit-list {
+  display: grid;
+  gap: 8px;
+}
+
+.audit-item {
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px 12px;
+}
+
+.audit-item strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.audit-item span,
+.audit-item p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.export-field-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.export-field-grid label {
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  background: var(--panel-soft);
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.export-task {
+  border: 1px solid #bfdbfe;
+  background: #f8fbff;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.export-task p,
+.download-record {
+  margin: 0;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.download-record {
+  margin-top: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 .settlement-preview,
@@ -1887,6 +2016,11 @@ th.sticky-action {
   .invoice-board,
   .account-report-panel,
   .approval-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .diff-grid,
+  .export-field-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -2016,6 +2150,8 @@ th.sticky-action {
     .invoice-board,
     .account-report-panel,
     .approval-steps,
+    .diff-grid,
+    .export-field-grid,
     .print-kpis {
     grid-template-columns: 1fr;
   }

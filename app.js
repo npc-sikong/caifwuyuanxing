@@ -48,6 +48,7 @@ const reportStatusMap = {
 const reconcileStatusMap = {
   matched: { label: "已平账", className: "success" },
   pending: { label: "待对账", className: "pending" },
+  matching: { label: "自动匹配中", className: "info" },
   diff: { label: "有差异", className: "fail" },
   processing: { label: "处理中", className: "info" },
   closed: { label: "已关闭", className: "muted" }
@@ -106,7 +107,7 @@ const roleProfiles = {
     badge: "日常处理",
     domains: ["workbench", "paymentAccount", "cashFlow", "bookTemplateDomain", "customerBalance"],
     deniedModules: ["riskReport"],
-    mutating: ["add", "edit", "delete", "approve", "reject", "confirmSettle", "rejectSettle", "applyQuota"],
+    mutating: ["add", "edit", "delete", "approve", "reject", "confirmSettle", "rejectSettle", "applyQuota", "rematch", "markBalanced", "startRefund", "createSupplement", "markDelay", "closeDiff"],
     description: "负责日常收银、余额、月结和台账处理，不进入研发风险和权限矩阵维护。"
   },
   auditor: {
@@ -204,14 +205,14 @@ const quickActions = {
 
 const fieldGroups = {
   user: ["userId", "userMobile", "userName", "toUserId", "toUserName", "objectId", "objectName", "customerName", "customerType"],
-  trade: ["cashOrderId", "requestId", "relationId", "tradeType", "bookCode", "scene", "bizType", "refundId", "originalOrderId", "channelName", "channelType"],
-  amount: ["amount", "transAmt", "discount", "balance", "openBalance", "occurredAmount", "debitAmount", "creditAmount", "cashAmount", "poolBalance", "frozenAmount", "availableAmount", "rechargeIncrease", "withdrawDecrease", "headAddAmount", "headReduceAmount", "settlementDeductAmount", "systemTrialAmount", "manualAdjustAmount", "finalDeductAmount", "beforeBalance", "afterBalance", "changeAmount", "incomeAmount", "expenseAmount", "netAmount", "receivableAmount", "payableAmount", "systemAmount", "channelAmount", "refundAmount"],
-  status: ["status", "level", "riskLevel", "owner", "handler", "handlerStatus", "deadline", "sla", "settlementStatus", "poolStatus", "quotaStatus", "approvalResult", "approvalTime", "approvalRemark", "repaymentPlanStatus", "writeOffStatus", "reportStatus", "reconcileStatus", "refundStatus", "noticeLevel", "readStatus"],
+  trade: ["cashOrderId", "requestId", "relationId", "tradeType", "bookCode", "scene", "bizType", "refundId", "originalOrderId", "channelName", "channelType", "billSource", "billFileName", "ruleVersion", "systemFlowNo", "channelFlowNo"],
+  amount: ["amount", "transAmt", "discount", "balance", "openBalance", "occurredAmount", "debitAmount", "creditAmount", "cashAmount", "poolBalance", "frozenAmount", "availableAmount", "rechargeIncrease", "withdrawDecrease", "headAddAmount", "headReduceAmount", "settlementDeductAmount", "systemTrialAmount", "manualAdjustAmount", "finalDeductAmount", "beforeBalance", "afterBalance", "changeAmount", "incomeAmount", "expenseAmount", "netAmount", "receivableAmount", "payableAmount", "systemAmount", "channelAmount", "refundAmount", "diffAmount", "longAmount", "shortAmount", "refundProcessingAmount", "pendingSupplementAmount", "manualAdjustAmount"],
+  status: ["status", "level", "riskLevel", "owner", "handler", "handlerStatus", "deadline", "sla", "settlementStatus", "poolStatus", "quotaStatus", "approvalResult", "approvalTime", "approvalRemark", "repaymentPlanStatus", "writeOffStatus", "reportStatus", "reconcileStatus", "refundStatus", "noticeLevel", "readStatus", "isOverdue", "lastHandleTime", "createdTime", "updateTime", "previousStatus", "nextAction"],
   book: ["bookOrderId", "bookTitle", "batchId", "batchDetailId", "accountId", "accountType", "accountObject", "bookCategory", "direction", "processId", "reportId", "reportName", "reportType", "reportDimension", "aggregationRule"],
   identity: ["siteId", "siteName", "siteLevel", "principal", "agentCount", "availableCredit"],
   ledger: ["ledgerId", "subjectType", "subjectName", "counterpartyType", "counterpartyName", "ledgerType", "loanAmount", "debtAmount", "repaidAmount", "outstandingAmount", "repaymentProgress", "dueDate", "overdueDays", "ledgerStatus", "relatedLedgerId"],
   settlement: ["settlementId", "settlementMonth", "billNo", "sourceType", "changeType", "formulaDesc", "operatorType", "operateTime"],
-  tech: ["route", "permission", "tableName", "beanName", "riskBean", "policyBean", "messageId", "consumer", "suggestion", "remark", "generatedBy", "generatedTime", "exportFormat", "retention", "diffReason"]
+  tech: ["route", "permission", "tableName", "beanName", "riskBean", "policyBean", "messageId", "consumer", "suggestion", "remark", "generatedBy", "generatedTime", "exportFormat", "retention", "diffReason", "ipAddress", "deviceInfo", "relatedDocs", "exceptionReason"]
 };
 
 const menuGroups = [
@@ -729,6 +730,7 @@ const appState = {
   activeKey: "dashboard",
   data: {},
   filters: {},
+  auditTrail: [],
   collapsedMenuGroups: loadCollapsedMenuGroups(),
   roleKey: loadStoredValue("financeDemoRole", "director"),
   timeRange: loadStoredValue("financeDemoTimeRange", "today")
@@ -1306,22 +1308,23 @@ function reconcileCenterModule() {
     title: "渠道对账",
     subtitle: "收银流水",
     pageType: "check",
+    actions: { rematch: true, markBalanced: true, startRefund: true, createSupplement: true, markDelay: true, closeDiff: true, exportDiff: true },
     desc: "按银行、三方通道和系统流水展示对账结果、差异原因和处理状态。",
     table: "reconcile_center_demo",
     route: "/finance/demo/reconcile",
     permission: "demo:finance:reconcile",
     scenario: "财务运营每日对银行/通道流水与系统收银流水进行核对，差异进入退款、补单或异常预警。",
-    summary: [metric("待对账", "18", "今日批次", "warning"), metric("已平账", "126", "自动匹配", "success"), metric("差异金额", "¥8,800.00", "2 笔", "danger"), metric("处理中", "3", "等待通道回执", "info")],
+    summary: [metric("待对账", "18", "今日批次", "warning"), metric("已平账", "126", "自动匹配", "success"), metric("差异金额", "¥8,800.00", "2 笔", "danger"), metric("处理中", "3", "等待通道回执", "info"), metric("长款金额", "¥6,200.00", "需退款/调整", "danger"), metric("短款金额", "¥2,600.00", "需补单/回执", "warning")],
     quickActions: [quick("收银流水", "cashOrder"), quick("退款管理", "refundManage", "danger"), quick("异常预警", "exceptionCenter", "danger")],
-    columns: ["reconcileId", "channelName", "channelType", "systemAmount", "channelAmount", "diffAmount", "reconcileStatus", "handler"],
-    filters: ["reconcileId", "channelName", "channelType", "reconcileStatus"],
-    fields: commonFields(["reconcileId", "channelName", "channelType", "period", "systemAmount", "channelAmount", "diffAmount", "diffReason", "reconcileStatus", "handler", "suggestion", "route"]),
+    columns: ["reconcileId", "period", "channelName", "billSource", "systemCount", "channelCount", "systemAmount", "channelAmount", "diffAmount", "diffCount", "longAmount", "shortAmount", "reconcileStatus", "handler", "deadline", "isOverdue", "lastHandleTime"],
+    filters: ["reconcileId", "period", "channelName", "channelType", "reconcileStatus", "handler", "diffReason"],
+    fields: commonFields(["reconcileId", "channelName", "channelType", "period", "billSource", "billFileName", "billImportTime", "ruleVersion", "systemCount", "channelCount", "systemAmount", "channelAmount", "diffAmount", "diffCount", "longAmount", "shortAmount", "refundProcessingAmount", "pendingSupplementAmount", "manualAdjustAmount", "matchedCount", "unmatchedSystemCount", "unmatchedChannelCount", "amountMismatchCount", "statusMismatchCount", "diffReason", "reconcileStatus", "previousStatus", "nextAction", "handler", "deadline", "expectedReceiptTime", "closeReason", "isOverdue", "lastHandleTime", "suggestion", "route", "relatedDocs", "exceptionReason", "createdTime", "updateTime", "ipAddress", "deviceInfo"]),
     rows: [
-      row({ reconcileId: "REC-20260523001", channelName: "支付宝通道", channelType: "payment", period: "2026-05-23", systemAmount: "186000.00", channelAmount: "177200.00", diffAmount: "8800.00", diffReason: "通道回调延迟/疑似漏单", reconcileStatus: "diff", handler: "财务运营", suggestion: "进入差异处理，必要时发起退款或补单", route: "#/refundManage" }),
-      row({ reconcileId: "REC-20260523002", channelName: "工商银行", channelType: "bank", period: "2026-05-23", systemAmount: "242560.00", channelAmount: "242560.00", diffAmount: "0.00", diffReason: "自动匹配", reconcileStatus: "matched", handler: "系统", suggestion: "已平账", route: "#/cashOrder" }),
-      row({ reconcileId: "REC-20260523003", channelName: "微信支付", channelType: "payment", period: "2026-05-23", systemAmount: "56000.00", channelAmount: "56000.00", diffAmount: "0.00", diffReason: "等待清算文件确认", reconcileStatus: "processing", handler: "财务运营", suggestion: "等待通道清算文件", route: "#/cashOrder" })
+      row({ reconcileId: "REC-20260523001", channelName: "支付宝通道", channelType: "payment", period: "2026-05-23", billSource: "渠道清算文件", billFileName: "alipay_20260523_01.csv", billImportTime: "2026-05-23 08:40:00", ruleVersion: "MATCH-RULE-v3.2", systemCount: "326", channelCount: "324", matchedCount: "318", unmatchedSystemCount: "5", unmatchedChannelCount: "3", amountMismatchCount: "2", statusMismatchCount: "1", systemAmount: "186000.00", channelAmount: "177200.00", diffAmount: "8800.00", diffCount: "8", longAmount: "6200.00", shortAmount: "2600.00", refundProcessingAmount: "0.00", pendingSupplementAmount: "2600.00", manualAdjustAmount: "0.00", diffReason: "通道回调延迟/疑似漏单", reconcileStatus: "diff", handler: "财务运营", deadline: "2026-05-23 12:00:00", isOverdue: "是", lastHandleTime: "2026-05-23 09:20:00", suggestion: "进入差异处理，必要时发起退款或补单", route: "#/refundManage", relatedDocs: "CASH202605220011 / REFUND-20260523002 / EXC-REC-001" }),
+      row({ reconcileId: "REC-20260523002", channelName: "工商银行", channelType: "bank", period: "2026-05-23", billSource: "银行对账单", billFileName: "icbc_20260523.xls", billImportTime: "2026-05-23 08:50:00", ruleVersion: "MATCH-RULE-v3.2", systemCount: "118", channelCount: "118", matchedCount: "118", unmatchedSystemCount: "0", unmatchedChannelCount: "0", amountMismatchCount: "0", statusMismatchCount: "0", systemAmount: "242560.00", channelAmount: "242560.00", diffAmount: "0.00", diffCount: "0", longAmount: "0.00", shortAmount: "0.00", refundProcessingAmount: "0.00", pendingSupplementAmount: "0.00", manualAdjustAmount: "0.00", diffReason: "自动匹配", reconcileStatus: "matched", handler: "系统", deadline: "2026-05-23 18:00:00", isOverdue: "否", lastHandleTime: "2026-05-23 09:05:00", suggestion: "已平账，可批量关闭或导出", route: "#/cashOrder" }),
+      row({ reconcileId: "REC-20260523003", channelName: "微信支付", channelType: "payment", period: "2026-05-23", billSource: "通道 API", billFileName: "wechat_api_batch_20260523", billImportTime: "2026-05-23 09:00:00", ruleVersion: "MATCH-RULE-v3.1", systemCount: "96", channelCount: "96", matchedCount: "94", unmatchedSystemCount: "1", unmatchedChannelCount: "1", amountMismatchCount: "0", statusMismatchCount: "2", systemAmount: "56000.00", channelAmount: "56000.00", diffAmount: "0.00", diffCount: "2", longAmount: "0.00", shortAmount: "0.00", refundProcessingAmount: "0.00", pendingSupplementAmount: "0.00", manualAdjustAmount: "0.00", diffReason: "等待清算文件确认", reconcileStatus: "processing", handler: "财务运营", deadline: "2026-05-23 16:00:00", isOverdue: "否", lastHandleTime: "2026-05-23 09:35:00", suggestion: "等待通道清算文件，超时自动进入异常预警", route: "#/cashOrder" })
     ],
-    help: pageHelp("渠道对账", "系统/银行/通道对账检查", ["reconcile_center_demo", "fin_cash_order", "fin_cash_order_history"], ["对账页只做差异定位，不直接修改收银流水。", "差异应明确来源：系统漏单、通道延迟、退款未回调、手工调整。", "高差异金额应进入异常预警和通知中心。"], ["真实开发需接入渠道账单文件、自动匹配规则、差异处理闭环和对账审计。"])
+    help: pageHelp("渠道对账", "系统/银行/通道对账检查", ["reconcile_center_demo", "fin_cash_order", "fin_cash_order_history"], ["对账状态流转：待对账 -> 自动匹配中 -> 已平账 / 有差异 -> 处理中 -> 已平账 / 已关闭。", "差异处理不新增模块，直接在本页详情和行操作中完成，并联动退款管理、收银流水、异常预警和通知中心。", "标记已平账只允许差异金额为 0 或差异处理完成的记录。", "关闭差异必须填写原因，并生成审计记录。"], ["真实开发需接入渠道账单文件、自动匹配规则、差异处理闭环、对账审计、退款/补单接口和 SLA 通知。"])
   });
 }
 
@@ -1426,6 +1429,7 @@ function statusDictModule() {
     row({ dict: "资金池变动", code: "settlement_deduct", name: "月结扣款", scene: "减少站点资金池" }),
     row({ dict: "退款状态", code: "applied", name: "申请中", scene: "退款管理状态流" }),
     row({ dict: "退款状态", code: "processing", name: "退款处理中", scene: "等待通道退款回调" }),
+    row({ dict: "对账状态", code: "matching", name: "自动匹配中", scene: "渠道账单已导入，系统正在匹配流水" }),
     row({ dict: "对账状态", code: "diff", name: "有差异", scene: "渠道和系统金额不一致" }),
     row({ dict: "报表状态", code: "generated", name: "已生成", scene: "报表中心可预览或导出" }),
     row({ dict: "通知优先级", code: "high", name: "高优先级", scene: "进入通知中心和异常预警" })
@@ -1465,11 +1469,12 @@ function pageHelp(title, positioning, tables, rules, notes = []) {
 
 function commonFields(keys) {
   const labels = {
-    item: "事项", bizType: "业务类型", level: "等级", owner: "负责人", handler: "处理人", deadline: "时限",
+    item: "事项", primaryNo: "主键编号", bizType: "业务类型", level: "等级", owner: "负责人", handler: "处理人", deadline: "时限",
     status: "状态", suggestion: "处理建议", route: "跳转路径", module: "模块", riskLevel: "风险等级",
     handlerStatus: "处理状态", sla: "SLA", processRecord: "处理记录", repaymentPlanStatus: "还款计划", writeOffStatus: "核销状态",
     reportStatus: "报表状态", reconcileStatus: "对账状态", refundStatus: "退款状态",
-    noticeLevel: "通知优先级", readStatus: "阅读状态",
+    noticeLevel: "通知优先级", readStatus: "阅读状态", previousStatus: "上一状态", nextAction: "下一步动作", isOverdue: "是否超时",
+    createdTime: "创建时间", updateTime: "更新时间", lastHandleTime: "最后处理时间",
     tableName: "表名", accountObject: "账户对象", accountType: "账户类型", accountCount: "账户数量",
     balance: "余额", openBalance: "期初余额", occurredAmount: "发生额", accountId: "账套号",
     userName: "用户名", processId: "记账主体", direction: "方向", closeOrder: "最近流水",
@@ -1485,7 +1490,12 @@ function commonFields(keys) {
     toUserId: "目标用户 ID", toUserName: "目标用户", details: "详情", cashOrderId: "收银流水 ID",
     relationId: "关联 ID", bookCode: "记账码", transAmt: "交易金额", discount: "优惠", fail: "失败原因",
     refundId: "退款单号", originalOrderId: "原始订单", refundAmount: "退款金额",
-    channelName: "渠道名称", channelType: "渠道类型", reconcileId: "对账批次", systemAmount: "系统金额", channelAmount: "渠道金额", diffReason: "差异原因",
+    channelName: "渠道名称", channelType: "渠道类型", reconcileId: "对账批次", billSource: "账单来源", billFileName: "账单文件名", billImportTime: "账单导入时间", ruleVersion: "规则版本",
+    systemCount: "系统流水数", channelCount: "渠道流水数", matchedCount: "自动匹配数", unmatchedSystemCount: "未匹配系统数", unmatchedChannelCount: "未匹配渠道数",
+    amountMismatchCount: "金额不一致数", statusMismatchCount: "状态不一致数", diffCount: "差异笔数",
+    systemAmount: "系统金额", channelAmount: "渠道金额", diffReason: "差异原因", longAmount: "长款金额", shortAmount: "短款金额",
+    refundProcessingAmount: "退款中金额", pendingSupplementAmount: "待补单金额", systemFlowNo: "系统流水号", channelFlowNo: "渠道流水号",
+    expectedReceiptTime: "预计回执时间", closeReason: "关闭原因",
     scene: "场景", cashAmount: "交易金额", riskPoint: "风险点", balanceImpact: "余额影响",
     bookOrderId: "凭证 ID", bookTitle: "标题", batchId: "批次 ID", batchDetailId: "明细 ID",
     debitAmount: "借方金额", creditAmount: "贷方金额", diffAmount: "差额", title: "标题",
@@ -1497,7 +1507,7 @@ function commonFields(keys) {
     remark: "备注", policyName: "策略名称", beanName: "Bean 名称", bookCategory: "记账分类",
     code: "参数大类", codeKey: "参数键", value1: "属性1/记账码", updateTime: "更新时间",
     rule: "借贷规则", dict: "字典", name: "含义", code: "编码", usage: "用途", relation: "主要关联",
-    domain: "业务域", risk: "风险点", operator: "操作人", action: "动作", target: "对象", operateTime: "操作时间",
+    domain: "业务域", risk: "风险点", operator: "操作人", action: "动作", target: "对象", operateTime: "操作时间", relatedDocs: "关联单据", exceptionReason: "异常原因", ipAddress: "IP", deviceInfo: "设备信息",
     input: "输入", output: "输出", step: "步骤",
     ledgerId: "台账编号", subjectType: "当前主体类型", subjectName: "当前主体", counterpartyType: "对手方类型",
     counterpartyName: "对手方", ledgerType: "台账类型", loanAmount: "借出金额", debtAmount: "欠款金额",
@@ -1531,7 +1541,7 @@ function inferType(key) {
   if (key === "ledgerStatus") return "ledgerStatus";
   if (key === "repaymentProgress") return "progress";
   if (key === "overdueDays") return "overdue";
-  if (["amount", "transAmt", "discount", "balance", "openBalance", "occurredAmount", "debitAmount", "creditAmount", "diffAmount", "cashAmount", "loanAmount", "debtAmount", "repaidAmount", "outstandingAmount", "availableCredit", "poolBalance", "frozenAmount", "availableAmount", "rechargeIncrease", "withdrawDecrease", "headAddAmount", "headReduceAmount", "settlementDeductAmount", "systemTrialAmount", "manualAdjustAmount", "finalDeductAmount", "beforeBalance", "afterBalance", "changeAmount", "siteRechargeAmount", "agentRechargeAmount", "memberRechargeAmount", "siteWithdrawAmount", "agentWithdrawAmount", "memberWithdrawAmount", "incomeAmount", "expenseAmount", "netAmount", "receivableAmount", "payableAmount", "systemAmount", "channelAmount", "refundAmount"].includes(key)) return "money";
+  if (["amount", "transAmt", "discount", "balance", "openBalance", "occurredAmount", "debitAmount", "creditAmount", "diffAmount", "cashAmount", "loanAmount", "debtAmount", "repaidAmount", "outstandingAmount", "availableCredit", "poolBalance", "frozenAmount", "availableAmount", "rechargeIncrease", "withdrawDecrease", "headAddAmount", "headReduceAmount", "settlementDeductAmount", "systemTrialAmount", "manualAdjustAmount", "finalDeductAmount", "beforeBalance", "afterBalance", "changeAmount", "siteRechargeAmount", "agentRechargeAmount", "memberRechargeAmount", "siteWithdrawAmount", "agentWithdrawAmount", "memberWithdrawAmount", "incomeAmount", "expenseAmount", "netAmount", "receivableAmount", "payableAmount", "systemAmount", "channelAmount", "refundAmount", "longAmount", "shortAmount", "refundProcessingAmount", "pendingSupplementAmount"].includes(key)) return "money";
   if (["level", "riskLevel"].includes(key)) return "level";
   return "text";
 }
@@ -1551,11 +1561,82 @@ function applyDomainMetadata() {
 function initData() {
   const seedData = {};
   Object.entries(moduleCatalog).forEach(([key, mod]) => {
-    seedData[key] = (mod.rows || []).map((item, index) => ({ __id: `${key}-${index + 1}`, ...item }));
+    seedData[key] = (mod.rows || []).map((item, index) => normalizeRow(key, mod, item, index));
     appState.filters[key] = {};
   });
   const savedData = loadDemoData();
   appState.data = { ...seedData, ...savedData };
+  appState.auditTrail = loadAuditTrail();
+  syncAuditLogModule();
+}
+
+function normalizeRow(key, mod, item, index) {
+  const createdHour = String(9 + (index % 8)).padStart(2, "0");
+  const updatedHour = String(10 + (index % 7)).padStart(2, "0");
+  const statusValue = item.status || item.settlementStatus || item.ledgerStatus || item.reconcileStatus || item.refundStatus || item.reportStatus || item.poolStatus || item.quotaStatus || "";
+  const primaryValue = item.reconcileId || item.requestId || item.cashOrderId || item.settlementId || item.ledgerId || item.adjustId || item.flowId || item.bookOrderId || item.reportId || item.accountId || item.item || item.title || `${mod.title}-${index + 1}`;
+  return {
+    __id: `${key}-${index + 1}`,
+    createdTime: item.createdTime || `2026-05-23 ${createdHour}:0${index % 6}:00`,
+    updateTime: item.updateTime || `2026-05-23 ${updatedHour}:2${index % 6}:00`,
+    handler: item.handler || item.owner || getDomainProfile(mod).owner,
+    previousStatus: item.previousStatus || previousStatusText(statusValue, item),
+    nextAction: item.nextAction || defaultNextAction(statusValue, item, mod),
+    isOverdue: item.isOverdue || (Number(item.overdueDays) > 0 || String(item.sla || "").includes("立即") ? "是" : "否"),
+    relatedDocs: item.relatedDocs || buildRelatedDocs(item),
+    exceptionReason: item.exceptionReason || item.fail || item.diffReason || item.diffReason || item.suggestion || "",
+    ipAddress: item.ipAddress || `10.10.${index + 1}.23`,
+    deviceInfo: item.deviceInfo || "Chrome / MacOS / 演示环境",
+    ...item,
+    primaryNo: item.primaryNo || primaryValue
+  };
+}
+
+function previousStatusText(statusValue) {
+  if (!statusValue) return "创建";
+  const map = {
+    "10": "创建",
+    "01": "待处理",
+    "00": "处理中",
+    "09": "处理中",
+    pending: "试算完成",
+    insufficient: "待扣款",
+    deducted: "待扣款",
+    returned: "待扣款",
+    diff: "自动匹配中",
+    processing: "有差异",
+    matched: "自动匹配中",
+    closed: "处理中",
+    applied: "申请中",
+    reviewing: "申请中",
+    refunded: "退款处理中",
+    rejected: "审核中",
+    overdue: "生效中",
+    partial: "生效中",
+    settled: "部分还款"
+  };
+  return map[statusValue] || "上一节点";
+}
+
+function defaultNextAction(statusValue, row, mod) {
+  if (row.reconcileStatus === "diff") return "重新匹配、发起退款/补单、标记通道延迟或关闭差异";
+  if (row.reconcileStatus === "processing") return "等待通道回执，完成后标记已平账或关闭差异";
+  if (row.reconcileStatus === "pending") return "执行自动匹配";
+  if (row.reconcileStatus === "matched") return "可导出或批量关闭已平账记录";
+  if (row.settlementStatus === "pending") return "确认扣款或退回调整";
+  if (row.settlementStatus === "insufficient") return "补足站点资金池或退回月结调整";
+  if (row.quotaStatus === "pending") return "确认调整或驳回";
+  if (row.ledgerStatus === "overdue") return "确认还款计划、催收或核销";
+  if (row.status === "10") return "负责人复核并处理";
+  if (row.status === "09") return "查看异常原因并重试或关闭";
+  if (row.refundStatus === "applied" || row.refundStatus === "reviewing") return "审核通过或驳回退款申请";
+  if ((mod.pageType || "management") !== "management") return "查看详情或跳转到独立管理页";
+  return "查看详情、导出或进入关联模块";
+}
+
+function buildRelatedDocs(row) {
+  const docs = [row.cashOrderId, row.requestId, row.settlementId, row.ledgerId, row.relatedLedgerId, row.refundId, row.reconcileId, row.reportId, row.route].filter(Boolean);
+  return docs.join(" / ");
 }
 
 function escapeHtml(value) {
@@ -1736,6 +1817,109 @@ function loadDemoData() {
   }
 }
 
+function loadAuditTrail() {
+  try {
+    return JSON.parse(localStorage.getItem("financeDemoAuditTrail") || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveAuditTrail() {
+  try {
+    localStorage.setItem("financeDemoAuditTrail", JSON.stringify(appState.auditTrail || []));
+  } catch {
+    // Ignore storage errors in static preview mode.
+  }
+}
+
+function syncAuditLogModule() {
+  if (!appState.data.auditLog) return;
+  const dynamicRows = (appState.auditTrail || []).map(log => auditLogRowFromLog(log));
+  const existingIds = new Set(dynamicRows.map(row => row.__id));
+  const seededRows = appState.data.auditLog.filter(row => !existingIds.has(row.__id));
+  appState.data.auditLog = [...dynamicRows, ...seededRows].slice(0, 80);
+}
+
+function auditLogRowFromLog(log) {
+  return {
+    __id: log.__id,
+    operator: log.operator,
+    action: log.action,
+    module: log.module,
+    target: log.target,
+    operateTime: log.time,
+    status: "00",
+    remark: `${log.beforeStatus} -> ${log.afterStatus}；${log.remark}`,
+    relatedDocs: log.relatedDocs,
+    ipAddress: log.ipAddress,
+    deviceInfo: log.deviceInfo
+  };
+}
+
+function recordAudit(row, action, beforeStatus, afterStatus, remark, moduleKey = appState.activeKey) {
+  const mod = moduleCatalog[moduleKey] || activeModule();
+  const targetId = targetIdentifier(row);
+  const log = {
+    __id: `audit-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    targetId,
+    operator: activeRole().label,
+    action,
+    module: mod.title,
+    moduleKey,
+    target: targetId || mod.title,
+    time: formatDateTime(new Date()),
+    beforeStatus: beforeStatus || "未记录",
+    afterStatus: afterStatus || "未记录",
+    remark: remark || "演示操作",
+    relatedDocs: row.relatedDocs || buildRelatedDocs(row) || targetId,
+    ipAddress: row.ipAddress || "10.10.9.23",
+    deviceInfo: row.deviceInfo || "Chrome / MacOS / 演示环境",
+    permission: mod.permission
+  };
+  appState.auditTrail = [log, ...(appState.auditTrail || [])].slice(0, 100);
+  syncAuditLogModule();
+  saveAuditTrail();
+}
+
+function auditForRow(row) {
+  const target = targetIdentifier(row);
+  const logs = (appState.auditTrail || []).filter(log => log.targetId === target || (target && String(log.relatedDocs || "").includes(target)));
+  if (logs.length) return logs.slice(0, 6);
+  const status = rowStatusLabel(row);
+  return [
+    {
+      action: "创建记录",
+      operator: row.handler || "系统",
+      time: row.createdTime || "2026-05-23 09:00:00",
+      beforeStatus: "创建",
+      afterStatus: status,
+      remark: row.suggestion || "系统生成演示记录",
+      ipAddress: row.ipAddress || "10.10.1.23",
+      deviceInfo: row.deviceInfo || "Chrome / MacOS / 演示环境"
+    },
+    {
+      action: "运营复核",
+      operator: row.handler || activeRole().label,
+      time: row.lastHandleTime || row.updateTime || "2026-05-23 09:30:00",
+      beforeStatus: row.previousStatus || "上一节点",
+      afterStatus: status,
+      remark: row.nextAction || "查看详情并按权限处理",
+      ipAddress: row.ipAddress || "10.10.1.23",
+      deviceInfo: row.deviceInfo || "Chrome / MacOS / 演示环境"
+    }
+  ];
+}
+
+function targetIdentifier(row) {
+  return row.reconcileId || row.requestId || row.refundId || row.cashOrderId || row.settlementId || row.ledgerId || row.adjustId || row.flowId || row.bookOrderId || row.reportId || row.accountId || row.primaryNo || row.item || row.title || row.__id || "";
+}
+
+function rowStatusLabel(row) {
+  const status = detailStatus(row);
+  return status ? formatPlainValue(status.value, status.type) : "未设置";
+}
+
 function saveDemoData() {
   try {
     localStorage.setItem("financeDemoData", JSON.stringify(appState.data));
@@ -1747,6 +1931,7 @@ function saveDemoData() {
 function resetDemoData() {
   try {
     localStorage.removeItem("financeDemoData");
+    localStorage.removeItem("financeDemoAuditTrail");
   } catch {
     // localStorage may be unavailable when opened in a restricted preview.
   }
@@ -1807,7 +1992,7 @@ function moduleActions(mod) {
 }
 
 function canAction(mod, action) {
-  const mutatingActions = ["add", "edit", "delete", "approve", "reject", "confirmSettle", "rejectSettle", "applyQuota"];
+  const mutatingActions = ["add", "edit", "delete", "approve", "reject", "confirmSettle", "rejectSettle", "applyQuota", "rematch", "markBalanced", "startRefund", "createSupplement", "markDelay", "closeDiff"];
   if (mutatingActions.includes(action) && !roleCanMutate(action)) return false;
   return Boolean(moduleActions(mod)[action]);
 }
@@ -1820,6 +2005,13 @@ function rowActionMeta(action) {
     confirmSettle: { label: "确认扣款", className: "success" },
     rejectSettle: { label: "退回调整", className: "danger" },
     applyQuota: { label: "确认调整", className: "success" },
+    rematch: { label: "重新匹配", className: "" },
+    markBalanced: { label: "标记平账", className: "success" },
+    startRefund: { label: "发起退款", className: "danger" },
+    createSupplement: { label: "发起补单", className: "" },
+    markDelay: { label: "通道延迟", className: "" },
+    closeDiff: { label: "关闭差异", className: "danger" },
+    exportDiff: { label: "导出差异", className: "" },
     edit: { label: "编辑", className: "" },
     delete: { label: "删除", className: "danger" }
   }[action] || { label: action, className: "" };
@@ -1829,6 +2021,10 @@ function shouldShowRowAction(action, row) {
   if (action === "approve" || action === "reject") return row.status === "10";
   if (action === "confirmSettle" || action === "rejectSettle") return ["pending", "insufficient"].includes(row.settlementStatus);
   if (action === "applyQuota") return row.quotaStatus === "pending";
+  if (action === "rematch") return ["pending", "diff", "processing"].includes(row.reconcileStatus);
+  if (action === "markBalanced") return ["processing", "matched"].includes(row.reconcileStatus) || (row.reconcileStatus === "diff" && parseMoney(row.diffAmount) === 0);
+  if (action === "startRefund" || action === "createSupplement" || action === "markDelay" || action === "closeDiff") return ["diff", "processing"].includes(row.reconcileStatus);
+  if (action === "exportDiff") return Boolean(row.reconcileId);
   return true;
 }
 
@@ -2263,16 +2459,12 @@ function renderFlow(flow) {
 }
 
 function renderQuery(mod) {
-  const filters = mod.filters || [];
+  const filters = buildFilterKeys(mod);
   if (!filters.length || !canAction(mod, "search")) return "";
   return `<section class="panel">
     <div class="panel-inner">
       <div class="query-grid">
-        ${filters.map(key => {
-          const field = findField(mod, key);
-          const value = appState.filters[appState.activeKey][key] || "";
-          return `<div class="field"><label>${escapeHtml(field.label)}</label><input data-filter="${escapeHtml(key)}" value="${escapeHtml(value)}" placeholder="输入${escapeHtml(field.label)}" /></div>`;
-        }).join("")}
+        ${filters.map(key => renderFilterControl(mod, key)).join("")}
         <div class="query-actions">
           <button class="btn primary" type="button" data-action="search">查询</button>
           <button class="btn" type="button" data-action="reset">清空</button>
@@ -2280,6 +2472,56 @@ function renderQuery(mod) {
       </div>
     </div>
   </section>`;
+}
+
+function buildFilterKeys(mod) {
+  const keys = [...(mod.filters || [])];
+  ["createdStart", "createdEnd", "amountMin", "amountMax", "handler", "riskLevel", "isOverdue"].forEach(key => {
+    if (!keys.includes(key)) keys.push(key);
+  });
+  return keys.slice(0, appState.activeKey === "reconcileCenter" ? 12 : 10);
+}
+
+function renderFilterControl(mod, key) {
+  const values = appState.filters[appState.activeKey] || {};
+  const value = values[key] || "";
+  const label = filterLabel(mod, key);
+  const selectOptions = filterOptions(mod, key);
+  if (selectOptions) {
+    return `<div class="field"><label>${escapeHtml(label)}</label><select data-filter="${escapeHtml(key)}">
+      <option value="">全部</option>
+      ${selectOptions.map(option => `<option value="${escapeHtml(option.value)}" ${String(option.value) === String(value) ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}
+    </select></div>`;
+  }
+  const type = key.includes("Start") || key.includes("End") || key === "period" ? "date" : "text";
+  const placeholder = key === "amountMin" ? "最小金额" : key === "amountMax" ? "最大金额" : `输入${label}`;
+  return `<div class="field"><label>${escapeHtml(label)}</label><input type="${type}" data-filter="${escapeHtml(key)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" /></div>`;
+}
+
+function filterLabel(mod, key) {
+  const labels = {
+    createdStart: "创建开始",
+    createdEnd: "创建结束",
+    amountMin: "金额下限",
+    amountMax: "金额上限",
+    isOverdue: "是否超时"
+  };
+  return labels[key] || findField(mod, key).label;
+}
+
+function filterOptions(mod, key) {
+  if (key === "status") return Object.entries(statusMap).map(([value, item]) => ({ value, label: item.label }));
+  if (key === "settlementStatus") return Object.entries(settlementStatusMap).map(([value, item]) => ({ value, label: item.label }));
+  if (key === "ledgerStatus") return Object.entries(ledgerStatusMap).map(([value, item]) => ({ value, label: item.label }));
+  if (key === "reconcileStatus") return Object.entries(reconcileStatusMap).map(([value, item]) => ({ value, label: item.label }));
+  if (key === "refundStatus") return Object.entries(refundStatusMap).map(([value, item]) => ({ value, label: item.label }));
+  if (key === "poolStatus") return Object.entries(poolStatusMap).map(([value, item]) => ({ value, label: item.label }));
+  if (key === "quotaStatus") return Object.entries(quotaStatusMap).map(([value, item]) => ({ value, label: item.label }));
+  if (key === "channelType") return Object.entries(dictionaries.channelType).map(([value, label]) => ({ value, label }));
+  if (key === "tradeType") return Object.entries(dictionaries.tradeType).map(([value, label]) => ({ value, label }));
+  if (key === "riskLevel" || key === "level") return ["高", "中", "低"].map(value => ({ value, label: value }));
+  if (key === "isOverdue") return ["是", "否"].map(value => ({ value, label: value }));
+  return null;
 }
 
 function renderTablePanel(mod, rows) {
@@ -2309,7 +2551,7 @@ function renderTablePanel(mod, rows) {
 
 function renderTable(mod, rows) {
   const cols = displayColumns(mod);
-  const rowActions = ["detail", "approve", "reject", "confirmSettle", "rejectSettle", "applyQuota", "edit", "delete"].filter(action => canAction(mod, action));
+  const rowActions = ["detail", "approve", "reject", "confirmSettle", "rejectSettle", "applyQuota", "rematch", "markBalanced", "startRefund", "createSupplement", "markDelay", "closeDiff", "exportDiff", "edit", "delete"].filter(action => canAction(mod, action));
   if (!rows.length) return `<div class="empty">暂无匹配的演示数据</div>`;
   return `<div class="table-wrap"><table>
     <thead><tr>${cols.map(key => `<th>${escapeHtml(findField(mod, key).label)}</th>`).join("")}${rowActions.length ? `<th class="sticky-action">操作</th>` : ""}</tr></thead>
@@ -2328,14 +2570,14 @@ function renderTable(mod, rows) {
 }
 
 function displayColumns(mod) {
-  const original = mod.columns || [];
+  const original = ensureListColumns(mod);
   if (original.length <= 8) return original;
   const priority = [
     "item", "bizType", "module", "siteName", "subjectName", "counterpartyName",
-    "requestId", "cashOrderId", "settlementId", "ledgerId", "adjustId", "flowId", "bookOrderId",
+    "primaryNo", "requestId", "cashOrderId", "reconcileId", "settlementId", "ledgerId", "adjustId", "flowId", "bookOrderId",
     "title", "policyName", "bookTitle", "accountId", "userName", "tradeType", "bookCode",
     "amount", "transAmt", "balance", "availableAmount", "finalDeductAmount", "outstandingAmount",
-    "riskLevel", "handler", "owner", "deadline", "status", "settlementStatus", "ledgerStatus", "poolStatus", "quotaStatus", "suggestion"
+    "riskLevel", "handler", "owner", "deadline", "status", "settlementStatus", "reconcileStatus", "ledgerStatus", "poolStatus", "quotaStatus", "createdTime", "updateTime", "suggestion"
   ];
   const picked = [];
   priority.forEach(key => {
@@ -2345,6 +2587,28 @@ function displayColumns(mod) {
     if (!picked.includes(key) && picked.length < 8) picked.push(key);
   });
   return picked;
+}
+
+function ensureListColumns(mod) {
+  const original = [...(mod.columns || [])];
+  const fields = new Set([...(mod.columns || []), ...(mod.fields || []).map(field => field.key)]);
+  const additions = [];
+  if (!original.some(key => ["primaryNo", "requestId", "cashOrderId", "reconcileId", "settlementId", "ledgerId", "adjustId", "flowId", "bookOrderId", "reportId", "accountId", "item", "title"].includes(key))) additions.push("primaryNo");
+  if (!original.some(key => ["userName", "subjectName", "siteName", "channelName", "objectName", "accountObject", "bizType", "item"].includes(key))) {
+    const subject = ["siteName", "userName", "subjectName", "channelName", "bizType", "item"].find(key => fields.has(key));
+    if (subject) additions.push(subject);
+  }
+  if (!original.some(key => isMoneyField(key))) {
+    const amount = ["amount", "diffAmount", "systemAmount", "balance", "availableAmount", "finalDeductAmount", "outstandingAmount", "loanAmount", "changeAmount", "incomeAmount"].find(key => fields.has(key));
+    if (amount) additions.push(amount);
+  }
+  if (!original.some(key => ["status", "settlementStatus", "ledgerStatus", "reconcileStatus", "refundStatus", "reportStatus", "poolStatus", "quotaStatus"].includes(key))) {
+    const status = ["status", "settlementStatus", "reconcileStatus", "ledgerStatus", "refundStatus", "reportStatus", "poolStatus", "quotaStatus"].find(key => fields.has(key));
+    if (status) additions.push(status);
+  }
+  if (!original.includes("handler")) additions.push("handler");
+  if (!original.includes("createdTime")) additions.push("createdTime");
+  return [...new Set([...additions, ...original])];
 }
 
 function findField(mod, key) {
@@ -2358,14 +2622,31 @@ function isMoneyField(key) {
 function filteredRows(mod) {
   const rows = appState.data[appState.activeKey] || [];
   const filters = appState.filters[appState.activeKey] || {};
-  return rows.filter(row => Object.entries(filters).every(([key, value]) => !value || String(row[key] ?? "").toLowerCase().includes(String(value).toLowerCase())));
+  return rows.filter(row => Object.entries(filters).every(([key, value]) => filterRow(row, key, value)));
+}
+
+function filterRow(row, key, value) {
+  if (!value) return true;
+  if (key === "createdStart") return String(row.createdTime || row.period || "") >= String(value);
+  if (key === "createdEnd") return String(row.createdTime || row.period || "") <= `${value} 23:59:59`;
+  if (key === "amountMin") return primaryAmount(row) >= parseMoney(value);
+  if (key === "amountMax") return primaryAmount(row) <= parseMoney(value);
+  if (key === "isOverdue") return String(row.isOverdue || "否") === String(value);
+  return String(row[key] ?? "").toLowerCase().includes(String(value).toLowerCase());
+}
+
+function primaryAmount(row) {
+  const key = ["amount", "transAmt", "balance", "availableAmount", "finalDeductAmount", "outstandingAmount", "diffAmount", "systemAmount", "channelAmount", "refundAmount", "loanAmount", "debtAmount", "changeAmount", "incomeAmount", "expenseAmount", "netAmount"].find(item => row[item] !== undefined);
+  return key ? parseMoney(row[key]) : 0;
 }
 
 function openDetail(rowId) {
   const mod = activeModule();
   const row = findRow(rowId);
   const groups = buildDetailGroups(mod, row);
-  const body = renderDetailHero(mod, row) + Object.entries(groups).map(([title, items]) => {
+  const body = renderDetailHero(mod, row)
+  + renderBusinessDetailSections(mod, row)
+  + Object.entries(groups).map(([title, items]) => {
     if (!items.length) return "";
     return `<section class="detail-section"><h3>${escapeHtml(title)}</h3><div class="detail-grid">
       ${items.map(field => `<div class="detail-item"><div class="detail-label">${escapeHtml(field.label)}</div><div class="detail-value">${formatValue(row[field.key], field.type)}</div></div>`).join("")}
@@ -2376,6 +2657,125 @@ function openDetail(rowId) {
     <div class="detail-item"><div class="detail-label">关联表</div><div class="detail-value">${escapeHtml(mod.table)}</div></div>
   </div></section>`;
   openModal(`${mod.title}详情`, body, `<button class="btn primary" type="button" data-action="close-modal">关闭</button>`);
+}
+
+function renderBusinessDetailSections(mod, row) {
+  return `
+    ${renderStateFlowSection(mod, row)}
+    ${appState.activeKey === "reconcileCenter" ? renderReconcileDetailSection(row) : ""}
+    ${renderProcessingSection(mod, row)}
+    ${renderAuditSection(mod, row)}
+    ${renderPermissionSection(mod, row)}
+  `;
+}
+
+function renderStateFlowSection(mod, row) {
+  const status = detailStatus(row);
+  const current = status ? formatPlainValue(status.value, status.type) : pageTypeName(mod.pageType || "management");
+  const flow = stateFlowFor(mod, row);
+  return `<section class="detail-section state-flow-section">
+    <h3>状态流转说明</h3>
+    <div class="state-flow">
+      ${flow.map(item => `<span class="${item === current ? "active" : ""}">${escapeHtml(item)}</span>`).join("")}
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-label">当前状态</div><div class="detail-value">${escapeHtml(current)}</div></div>
+      <div class="detail-item"><div class="detail-label">上一状态</div><div class="detail-value">${escapeHtml(row.previousStatus || "创建")}</div></div>
+      <div class="detail-item"><div class="detail-label">下一步可做</div><div class="detail-value">${escapeHtml(row.nextAction || detailConclusion(mod, row))}</div></div>
+      <div class="detail-item"><div class="detail-label">不可做</div><div class="detail-value">${escapeHtml(forbiddenActionText(mod, row))}</div></div>
+    </div>
+  </section>`;
+}
+
+function stateFlowFor(mod, row) {
+  if (row.reconcileStatus !== undefined) return ["待对账", "自动匹配中", "有差异", "处理中", "已平账", "已关闭"];
+  if (row.settlementStatus !== undefined) return ["试算中", "待扣款", "已扣款", "资金不足", "退回调整", "已关闭"];
+  if (row.ledgerStatus !== undefined) return ["待确认", "生效中", "部分还款", "已逾期", "已结清", "已核销"];
+  if (row.refundStatus !== undefined) return ["申请中", "审核中", "退款处理中", "已退款", "已拒绝"];
+  if (row.reportStatus !== undefined) return ["可生成", "生成中", "已生成", "已过期"];
+  return ["待处理", "处理中", "成功", "失败", "已归档", "已停用"];
+}
+
+function forbiddenActionText(mod, row) {
+  if (row.reconcileStatus === "matched") return "不可发起退款、补单或关闭差异；只能导出或批量关闭已平账记录。";
+  if (row.reconcileStatus === "closed") return "不可再次处理差异；如需重开应走反向审批。";
+  if (row.settlementStatus === "deducted") return "不可重复扣款；如需修正应走冲正或退回流程。";
+  if (row.ledgerStatus === "settled") return "未结清金额为 0 后才允许核销；已核销后不可直接编辑。";
+  if (mod.pageType !== "management") return "聚合、流程、检查页不可直接新增、编辑或删除底层业务数据。";
+  return "涉及审批、扣款、额度调整、核销、关闭和退款的动作必须二次确认并填写备注。";
+}
+
+function renderReconcileDetailSection(row) {
+  return `<section class="detail-section reconcile-detail">
+    <h3>差异明细与处理闭环</h3>
+    <div class="diff-grid">
+      ${mockReconcileDiffs(row).map(item => `<article class="diff-card">
+        <div class="diff-card-head"><strong>${escapeHtml(item.diffType)}</strong><span>${formatValue(item.diffAmount, "money")}</span></div>
+        <div class="diff-card-body">
+          <p>系统流水：${escapeHtml(item.systemFlowNo)} / 渠道流水：${escapeHtml(item.channelFlowNo)}</p>
+          <p>用户：${escapeHtml(item.userId)} · ${escapeHtml(item.tradeType)} · 原因：${escapeHtml(item.reason)}</p>
+          <p>建议动作：${escapeHtml(item.suggestion)}</p>
+          <p>关联单据：${escapeHtml(item.relatedDocs)}</p>
+        </div>
+      </article>`).join("")}
+    </div>
+    <div class="detail-actions">
+      ${["rematch", "markBalanced", "startRefund", "createSupplement", "markDelay", "closeDiff", "exportDiff"].filter(action => canAction(activeModule(), action) && shouldShowRowAction(action, row)).map(action => {
+        const meta = rowActionMeta(action);
+        return `<button class="btn ${meta.className === "danger" ? "danger" : meta.className === "success" ? "primary" : ""}" type="button" data-action="${action}" data-id="${escapeHtml(row.__id)}">${escapeHtml(meta.label)}</button>`;
+      }).join("")}
+    </div>
+  </section>`;
+}
+
+function mockReconcileDiffs(row) {
+  if (row.reconcileStatus === "matched") {
+    return [{ diffType: "无差异", diffAmount: "0.00", systemFlowNo: "SYS-AUTO-MATCH", channelFlowNo: "CH-AUTO-MATCH", userId: "-", tradeType: "自动匹配", reason: "系统金额与渠道金额一致", suggestion: "可归档或导出", relatedDocs: row.reconcileId }];
+  }
+  return [
+    { diffType: "长款", diffAmount: row.longAmount || "6200.00", systemFlowNo: "SYS-CASH-10011", channelFlowNo: "ALI-20260523-881", userId: "1142889689825594999", tradeType: "充值", reason: "渠道有入账，系统未生成流水", suggestion: "发起补单或标记通道延迟", relatedDocs: "CASH202605220011 / EXC-REC-001" },
+    { diffType: "短款", diffAmount: row.shortAmount || "2600.00", systemFlowNo: "SYS-CASH-10012", channelFlowNo: "ALI-20260523-882", userId: "1142889689825594222", tradeType: "退款", reason: "系统已退款，渠道回执未到账", suggestion: "联动退款管理等待通道回调", relatedDocs: "REFUND-20260523002" }
+  ];
+}
+
+function renderProcessingSection(mod, row) {
+  const records = [
+    `自动匹配：${row.billImportTime || row.createdTime || "2026-05-23 09:00:00"} 系统按规则执行匹配。`,
+    `人工处理：${row.lastHandleTime || row.updateTime || "2026-05-23 09:30:00"} ${row.handler || getDomainProfile(mod).owner} 复核当前状态。`,
+    row.suggestion ? `处理建议：${row.suggestion}` : "处理建议：查看关联单据并按权限处理。"
+  ];
+  return `<section class="detail-section"><h3>处理记录</h3><div class="timeline">
+    ${records.map((text, index) => `<div class="timeline-item"><span class="timeline-index">${index + 1}</span><div><div class="timeline-title">${escapeHtml(text.split("：")[0])}</div><div class="timeline-text">${escapeHtml(text)}</div></div></div>`).join("")}
+  </div></section>`;
+}
+
+function renderAuditSection(mod, row) {
+  const logs = auditForRow(row);
+  return `<section class="detail-section"><h3>操作日志 / 审计留痕</h3>
+    <div class="audit-list">
+      ${logs.map(log => `<div class="audit-item">
+        <strong>${escapeHtml(log.action)}</strong>
+        <span>${escapeHtml(log.operator)} · ${escapeHtml(log.time)} · ${escapeHtml(log.beforeStatus)} -> ${escapeHtml(log.afterStatus)}</span>
+        <p>${escapeHtml(log.remark)} · ${escapeHtml(log.ipAddress)} · ${escapeHtml(log.deviceInfo)}</p>
+      </div>`).join("")}
+    </div>
+  </section>`;
+}
+
+function renderPermissionSection(mod, row) {
+  return `<section class="detail-section"><h3>权限与数据范围</h3><div class="detail-grid">
+    <div class="detail-item"><div class="detail-label">当前角色</div><div class="detail-value">${escapeHtml(activeRole().label)} · ${escapeHtml(activeRole().badge)}</div></div>
+    <div class="detail-item"><div class="detail-label">权限点</div><div class="detail-value">${escapeHtml(mod.permission)}:list / detail / export</div></div>
+    <div class="detail-item"><div class="detail-label">数据范围</div><div class="detail-value">${escapeHtml(dataScopeText(mod, row))}</div></div>
+    <div class="detail-item"><div class="detail-label">备注要求</div><div class="detail-value">关键动作必须填写备注或原因，并记录操作人、时间、前后状态、关联单据、IP 和设备。</div></div>
+  </div></section>`;
+}
+
+function dataScopeText(mod, row) {
+  if (row.siteName || mod.domainKey === "paymentAccount") return "按站点隔离；总站可看全部站点，站点角色只看所属站点。";
+  if (row.subjectName || mod.domainKey === "customerBalance") return "按站点、代理层级和账户对象控制；会员不进入借欠台账。";
+  if (mod.domainKey === "cashFlow") return "按站点、用户、代理、通道和交易类型过滤。";
+  return "按角色权限和业务域控制。";
 }
 
 function renderDetailHero(mod, row) {
@@ -2399,7 +2799,7 @@ function renderDetailHero(mod, row) {
 }
 
 function detailPrimary(mod, row) {
-  const keys = ["item", "requestId", "cashOrderId", "settlementId", "ledgerId", "adjustId", "flowId", "bookOrderId", "bookTitle", "title", "policyName", "siteName", "accountId"];
+  const keys = ["item", "primaryNo", "reconcileId", "requestId", "refundId", "cashOrderId", "settlementId", "ledgerId", "adjustId", "flowId", "bookOrderId", "bookTitle", "title", "policyName", "siteName", "accountId"];
   const key = keys.find(item => row[item]);
   return key ? `${findField(mod, key).label}：${row[key]}` : `${mod.title}记录`;
 }
@@ -2410,7 +2810,7 @@ function detailStatus(row) {
 }
 
 function detailAmount(mod, row) {
-  const key = ["amount", "transAmt", "balance", "availableAmount", "finalDeductAmount", "outstandingAmount", "loanAmount", "debtAmount", "changeAmount", "debitAmount", "creditAmount"].find(item => row[item] !== undefined);
+  const key = ["amount", "transAmt", "refundAmount", "diffAmount", "systemAmount", "channelAmount", "balance", "availableAmount", "finalDeductAmount", "outstandingAmount", "loanAmount", "debtAmount", "changeAmount", "debitAmount", "creditAmount"].find(item => row[item] !== undefined);
   if (!key) return { label: "记录规模", value: "单条详情" };
   return { label: findField(mod, key).label, value: toCurrency(parseMoney(row[key])) };
 }
@@ -2453,14 +2853,19 @@ function openForm(rowId = "") {
 
 function saveForm(rowId) {
   const key = appState.activeKey;
+  const mod = activeModule();
   const values = {};
   new FormData(document.getElementById("demoForm")).forEach((value, field) => { values[field] = value; });
   if (rowId) {
     const index = appState.data[key].findIndex(item => item.__id === rowId);
-    appState.data[key][index] = { ...appState.data[key][index], ...values };
+    const beforeStatus = rowStatusLabel(appState.data[key][index] || {});
+    appState.data[key][index] = { ...appState.data[key][index], ...values, updateTime: formatDateTime(new Date()) };
+    recordAudit(appState.data[key][index], `编辑${mod.title}`, beforeStatus, rowStatusLabel(appState.data[key][index]), "编辑演示数据");
     showToast("已保存编辑演示");
   } else {
-    appState.data[key].unshift({ __id: `${key}-${Date.now()}`, ...values });
+    const nextRow = normalizeRow(key, mod, { __id: `${key}-${Date.now()}`, ...values }, appState.data[key].length + 1);
+    appState.data[key].unshift(nextRow);
+    recordAudit(nextRow, `新增${mod.title}`, "创建", rowStatusLabel(nextRow), "新增演示数据");
     showToast("已新增演示数据");
   }
   saveDemoData();
@@ -2471,7 +2876,14 @@ function saveForm(rowId) {
 function openHelp() {
   const mod = activeModule();
   const help = mod.help || pageHelp(mod.title, mod.desc, [mod.table], [mod.desc]);
-  const statusFlow = mod.subtitle === "月结中心"
+  const statusFlow = appState.activeKey === "reconcileCenter"
+    ? [
+      "待对账：渠道账单已导入，尚未匹配。",
+      "待对账 -> 自动匹配中 -> 已平账 / 有差异 -> 处理中 -> 已平账 / 已关闭。",
+      "有差异：金额、订单号、状态或时间不一致，需要在详情内发起退款、补单、通道延迟或关闭差异。",
+      "已关闭：必须填写关闭原因，并进入操作审计。"
+    ]
+    : mod.subtitle === "月结中心"
     ? ["试算中 -> 待扣款 -> 已扣款；资金池不足时进入资金不足，退回时进入退回调整。"]
     : mod.subtitle === "往来台账"
     ? ["待确认 -> 生效中 -> 部分还款/已逾期 -> 已结清 -> 已核销。"]
@@ -2509,6 +2921,13 @@ function operationsForModule(mod) {
   if (actions.confirmSettle) labels.push("确认月结扣款");
   if (actions.rejectSettle) labels.push("退回月结调整");
   if (actions.applyQuota) labels.push("确认额度调整");
+  if (actions.rematch) labels.push("重新匹配对账批次");
+  if (actions.markBalanced) labels.push("标记已平账");
+  if (actions.startRefund) labels.push("发起退款联动");
+  if (actions.createSupplement) labels.push("发起补单记录");
+  if (actions.markDelay) labels.push("标记通道延迟");
+  if (actions.closeDiff) labels.push("关闭差异并留痕");
+  if (actions.exportDiff) labels.push("导出差异明细");
   if (actions.add) labels.push("新增演示");
   if (actions.edit) labels.push("编辑演示");
   if (actions.delete) labels.push("删除演示");
@@ -2578,16 +2997,20 @@ function confirmApproval(rowId, result) {
     return;
   }
   const tradeName = approvalSubject(row);
+  const beforeStatus = rowStatusLabel(row);
   row.status = isApprove ? "01" : "09";
   row.handler = isApprove ? "财务审核（已通过）" : "财务审核（已驳回）";
   row.approvalResult = isApprove ? "通过" : "驳回";
   row.approvalTime = formatDateTime(new Date());
+  row.updateTime = row.approvalTime;
+  row.lastHandleTime = row.approvalTime;
   row.approvalRemark = remark || `${tradeName}审核通过，等待生成收银流水`;
   row.remark = isApprove ? `${tradeName}审核通过，待流转收银流水` : `${tradeName}审核驳回：${remark}`;
   if (appState.activeKey === "refundManage") {
     row.refundStatus = isApprove ? "processing" : "rejected";
     row.suggestion = isApprove ? "退款审核通过，等待通道处理" : `退款已拒绝：${remark}`;
   }
+  recordAudit(row, `${tradeName}${isApprove ? "审核通过" : "审核驳回"}`, beforeStatus, rowStatusLabel(row), row.approvalRemark);
   saveDemoData();
   closeModal();
   render();
@@ -2636,6 +3059,7 @@ function openSettlementConfirm(rowId) {
 
 function confirmSettlement(rowId) {
   const row = findRow(rowId);
+  const beforeStatus = rowStatusLabel(row);
   const pool = findPoolBySite(row.siteId);
   const available = pool ? parseMoney(pool.availableAmount) : parseMoney(row.availableAmount);
   const finalAmount = parseMoney(row.finalDeductAmount);
@@ -2645,10 +3069,13 @@ function confirmSettlement(rowId) {
   row.availableAmount = toMoney(available);
   row.afterBalance = toMoney(after);
   row.approvalTime = formatDateTime(new Date());
+  row.updateTime = row.approvalTime;
+  row.lastHandleTime = row.approvalTime;
   row.approvalRemark = remark;
   if (after < 0) {
     row.settlementStatus = "insufficient";
     row.suggestion = `资金池不足，缺口 ${toMoney(Math.abs(after))} 元，已阻断扣款`;
+    recordAudit(row, "月结扣款阻断", beforeStatus, rowStatusLabel(row), row.suggestion);
     saveDemoData();
     closeModal();
     render();
@@ -2676,6 +3103,7 @@ function confirmSettlement(rowId) {
     settlementId: row.settlementId,
     remark
   });
+  recordAudit(row, "确认月结扣款", beforeStatus, rowStatusLabel(row), remark);
   saveDemoData();
   closeModal();
   render();
@@ -2705,6 +3133,7 @@ function openSettlementReturn(rowId) {
 
 function confirmSettlementReturn(rowId) {
   const row = findRow(rowId);
+  const beforeStatus = rowStatusLabel(row);
   const reason = document.getElementById("settlementReturnReason")?.value.trim() || "";
   if (!reason) {
     showToast("退回调整需要填写原因");
@@ -2713,8 +3142,11 @@ function confirmSettlementReturn(rowId) {
   row.settlementStatus = "returned";
   row.handler = "总站财务（已退回）";
   row.approvalTime = formatDateTime(new Date());
+  row.updateTime = row.approvalTime;
+  row.lastHandleTime = row.approvalTime;
   row.approvalRemark = reason;
   row.suggestion = `已退回调整：${reason}`;
+  recordAudit(row, "退回月结调整", beforeStatus, rowStatusLabel(row), reason);
   saveDemoData();
   closeModal();
   render();
@@ -2746,6 +3178,7 @@ function openQuotaConfirm(rowId) {
 
 function confirmQuota(rowId) {
   const row = findRow(rowId);
+  const beforeStatus = rowStatusLabel(row);
   const pool = findPoolBySite(row.siteId);
   const change = parseMoney(row.changeAmount);
   const before = pool ? parseMoney(pool.availableAmount) : parseMoney(row.beforeBalance);
@@ -2759,6 +3192,8 @@ function confirmQuota(rowId) {
   row.afterBalance = toMoney(after);
   row.quotaStatus = "applied";
   row.approvalTime = formatDateTime(new Date());
+  row.updateTime = row.approvalTime;
+  row.lastHandleTime = row.approvalTime;
   row.approvalRemark = remark;
   if (pool) {
     pool.availableAmount = toMoney(after);
@@ -2780,6 +3215,7 @@ function confirmQuota(rowId) {
     settlementId: "",
     remark
   });
+  recordAudit(row, "确认额度调整", beforeStatus, rowStatusLabel(row), remark);
   saveDemoData();
   closeModal();
   render();
@@ -2833,6 +3269,8 @@ function formatDateTime(date) {
 }
 
 function confirmDelete(rowId) {
+  const row = findRow(rowId);
+  recordAudit(row, `删除${activeModule().title}`, rowStatusLabel(row), "已删除", "删除演示数据");
   appState.data[appState.activeKey] = appState.data[appState.activeKey].filter(row => row.__id !== rowId);
   saveDemoData();
   closeModal();
@@ -2895,6 +3333,271 @@ function openReportPreview(rowId = "") {
     <p class="muted-text">真实系统应由后端生成快照、PDF/XLSX 文件和导出记录；当前只做静态预览演示。</p>
   </section>`;
   openModal("报表预览", body, `<button class="btn" type="button" data-action="close-modal">关闭</button><button class="btn primary" type="button" data-action="export">下载演示</button>`);
+}
+
+function reconcileActionProfile(action) {
+  return {
+    rematch: {
+      title: "重新匹配对账批次",
+      label: "重新匹配",
+      nextStatus: "matching",
+      nextText: "自动匹配中",
+      note: "重新执行系统流水与渠道流水匹配，保留原差异记录和处理日志。",
+      placeholder: "请填写重新匹配原因，例如：渠道账单补传、规则版本更新"
+    },
+    markBalanced: {
+      title: "标记已平账",
+      label: "标记平账",
+      nextStatus: "matched",
+      nextText: "已平账",
+      note: "仅允许差异金额为 0，或退款/补单/通道回执已完成的记录操作。",
+      placeholder: "请填写平账依据，例如：补单已完成，差异已消除"
+    },
+    startRefund: {
+      title: "发起退款联动",
+      label: "发起退款",
+      nextStatus: "processing",
+      nextText: "处理中",
+      note: "联动已有退款管理模块生成退款审核记录，不新增差异处理模块。",
+      placeholder: "请填写退款原因，例如：渠道重复入账，需要按原单退款"
+    },
+    createSupplement: {
+      title: "发起补单记录",
+      label: "发起补单",
+      nextStatus: "processing",
+      nextText: "处理中",
+      note: "在当前对账批次内记录补单申请，并提示运营跳转收银流水复核。",
+      placeholder: "请填写补单原因，例如：渠道已到账但系统流水缺失"
+    },
+    markDelay: {
+      title: "标记通道延迟",
+      label: "标记延迟",
+      nextStatus: "processing",
+      nextText: "处理中",
+      note: "用于渠道回执未及时返回的场景，需要设置预计回执时间。",
+      placeholder: "请填写延迟说明，例如：通道回调延迟，等待 T+1 对账"
+    },
+    closeDiff: {
+      title: "关闭差异",
+      label: "关闭差异",
+      nextStatus: "closed",
+      nextText: "已关闭",
+      note: "必须填写关闭原因，关闭后不再继续退款或补单处理，并进入操作审计。",
+      placeholder: "请填写关闭原因，例如：人工确认无需处理，已线下核对"
+    }
+  }[action] || null;
+}
+
+function openReconcileAction(rowId, action) {
+  if (action === "exportDiff") {
+    openExportModal("diff", rowId);
+    return;
+  }
+  const row = findRow(rowId);
+  const profile = reconcileActionProfile(action);
+  if (!profile || !row.reconcileId) {
+    showToast("当前动作仅适用于渠道对账记录");
+    return;
+  }
+  if (action === "markBalanced" && parseMoney(row.diffAmount) !== 0 && row.reconcileStatus !== "processing") {
+    showToast("差异金额未处理完成，需先发起退款、补单或标记通道延迟");
+    return;
+  }
+  const body = `
+    <section class="detail-section">
+      <h3>${escapeHtml(profile.title)}</h3>
+      <p class="muted-text">${escapeHtml(profile.note)}</p>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">对账批次号</div><div class="detail-value">${escapeHtml(row.reconcileId)}</div></div>
+        <div class="detail-item"><div class="detail-label">渠道</div><div class="detail-value">${escapeHtml(row.channelName)} / ${formatValue(row.channelType, "channelType")}</div></div>
+        <div class="detail-item"><div class="detail-label">当前状态</div><div class="detail-value">${formatValue(row.reconcileStatus, "reconcileStatus")}</div></div>
+        <div class="detail-item"><div class="detail-label">操作后状态</div><div class="detail-value"><span class="status info">${escapeHtml(profile.nextText)}</span></div></div>
+        <div class="detail-item"><div class="detail-label">系统金额</div><div class="detail-value">${formatValue(row.systemAmount, "money")}</div></div>
+        <div class="detail-item"><div class="detail-label">渠道金额</div><div class="detail-value">${formatValue(row.channelAmount, "money")}</div></div>
+        <div class="detail-item"><div class="detail-label">差异金额</div><div class="detail-value">${formatValue(row.diffAmount, "money")}</div></div>
+        <div class="detail-item"><div class="detail-label">差异原因</div><div class="detail-value">${escapeHtml(row.diffReason || "待确认")}</div></div>
+      </div>
+    </section>
+    ${action === "markDelay" ? `<div class="field"><label>预计回执时间</label><input id="reconcileExpectedTime" type="datetime-local" /></div>` : ""}
+    <div class="field">
+      <label>${action === "closeDiff" ? "关闭原因" : "处理备注"}</label>
+      <textarea id="reconcileRemark" placeholder="${escapeHtml(profile.placeholder)}"></textarea>
+    </div>
+    <section class="detail-section export-task">
+      <h3>审计留痕</h3>
+      <p>确认后会记录操作人、操作时间、操作前状态、操作后状态、备注、关联单据、IP 和设备信息。</p>
+    </section>
+  `;
+  const footer = `<button class="btn" type="button" data-action="close-modal">取消</button><button class="btn ${action === "closeDiff" || action === "startRefund" ? "danger" : "primary"}" type="button" data-action="confirm-reconcile-action" data-id="${escapeHtml(rowId)}" data-reconcile-action="${escapeHtml(action)}">${escapeHtml(profile.label)}</button>`;
+  openModal(profile.title, body, footer);
+}
+
+function confirmReconcileAction(rowId, action) {
+  const row = findRow(rowId);
+  const profile = reconcileActionProfile(action);
+  if (!profile || !row.reconcileId) return;
+  const remark = document.getElementById("reconcileRemark")?.value.trim() || "";
+  if (!remark) {
+    showToast(action === "closeDiff" ? "关闭差异必须填写原因" : "请填写处理备注");
+    return;
+  }
+  const expected = document.getElementById("reconcileExpectedTime")?.value || "";
+  if (action === "markDelay" && !expected) {
+    showToast("标记通道延迟需要填写预计回执时间");
+    return;
+  }
+  if (action === "markBalanced" && parseMoney(row.diffAmount) !== 0 && row.reconcileStatus !== "processing") {
+    showToast("差异金额未处理完成，不能标记已平账");
+    return;
+  }
+  const beforeStatus = rowStatusLabel(row);
+  row.previousStatus = beforeStatus;
+  row.reconcileStatus = profile.nextStatus;
+  row.handler = activeRole().label;
+  row.lastHandleTime = formatDateTime(new Date());
+  row.updateTime = row.lastHandleTime;
+  row.isOverdue = "否";
+
+  if (action === "rematch") {
+    row.nextAction = "等待自动匹配结果；若仍有差异进入退款、补单或通道延迟处理。";
+    row.suggestion = `已重新匹配：${remark}`;
+  }
+  if (action === "markBalanced") {
+    row.diffAmount = "0.00";
+    row.diffCount = "0";
+    row.longAmount = "0.00";
+    row.shortAmount = "0.00";
+    row.refundProcessingAmount = "0.00";
+    row.pendingSupplementAmount = "0.00";
+    row.nextAction = "差异已消除，可导出或归档。";
+    row.suggestion = `已平账：${remark}`;
+  }
+  if (action === "startRefund") {
+    const amount = Math.max(parseMoney(row.shortAmount), Math.abs(parseMoney(row.diffAmount)));
+    row.refundProcessingAmount = toMoney(amount);
+    row.nextAction = "已生成退款审核记录，等待退款管理处理和渠道回调。";
+    row.suggestion = `已联动退款管理：${remark}`;
+    addRefundFromReconcile(row, amount, remark);
+  }
+  if (action === "createSupplement") {
+    const amount = Math.max(parseMoney(row.longAmount), Math.abs(parseMoney(row.diffAmount)));
+    row.pendingSupplementAmount = toMoney(amount);
+    row.nextAction = "已记录补单申请，请进入收银流水核对系统侧流水。";
+    row.suggestion = `已发起补单：${remark}`;
+  }
+  if (action === "markDelay") {
+    row.expectedReceiptTime = expected.replace("T", " ");
+    row.nextAction = `等待通道回执，预计 ${row.expectedReceiptTime} 前复核。`;
+    row.suggestion = `已标记通道延迟：${remark}`;
+  }
+  if (action === "closeDiff") {
+    row.closeReason = remark;
+    row.nextAction = "差异已关闭；如需重开需走反向审批。";
+    row.suggestion = `已关闭差异：${remark}`;
+  }
+  recordAudit(row, profile.title, beforeStatus, rowStatusLabel(row), remark);
+  saveDemoData();
+  closeModal();
+  render();
+  showToast(`${profile.title}已完成`);
+}
+
+function addRefundFromReconcile(row, amount, remark) {
+  if (!appState.data.refundManage) return;
+  const exists = appState.data.refundManage.some(item => item.route === "#/reconcileCenter" && item.originalOrderId === (row.systemFlowNo || row.reconcileId));
+  if (exists) return;
+  const now = Date.now();
+  appState.data.refundManage.unshift(normalizeRow("refundManage", moduleCatalog.refundManage, {
+    __id: `refundManage-${now}`,
+    refundId: `REFUND-${now}`,
+    originalOrderId: row.systemFlowNo || row.reconcileId,
+    cashOrderId: row.systemFlowNo || "",
+    userId: "对账差异用户",
+    userMobile: "",
+    userName: `${row.channelName}差异用户`,
+    tradeType: "recharge_10",
+    refundAmount: toMoney(amount || Math.abs(parseMoney(row.diffAmount))),
+    refundStatus: "reviewing",
+    status: "10",
+    handler: "财务审核",
+    route: "#/reconcileCenter",
+    suggestion: `由对账批次 ${row.reconcileId} 发起：${remark}`
+  }, appState.data.refundManage.length + 1));
+}
+
+function openExportModal(scope = "list", rowId = "") {
+  const mod = activeModule();
+  if (!canAction(mod, "export") && scope !== "diff") {
+    showToast("当前页面不支持导出");
+    return;
+  }
+  const row = rowId ? findRow(rowId) : {};
+  const isDiff = scope === "diff";
+  const rows = isDiff ? mockReconcileDiffs(row) : filteredRows(mod);
+  const fields = exportFieldsFor(mod, isDiff);
+  const body = `
+    <section class="detail-section">
+      <h3>${isDiff ? "导出差异明细" : "导出条件确认"}</h3>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">导出范围</div><div class="detail-value">${escapeHtml(isDiff ? `${row.reconcileId} 差异明细` : `${mod.title}当前筛选结果`)}</div></div>
+        <div class="detail-item"><div class="detail-label">命中记录</div><div class="detail-value">${rows.length} 条演示数据</div></div>
+        <div class="detail-item"><div class="detail-label">导出权限</div><div class="detail-value">${escapeHtml(mod.permission)}:export · 当前角色 ${escapeHtml(activeRole().label)}</div></div>
+        <div class="detail-item"><div class="detail-label">筛选条件</div><div class="detail-value">${escapeHtml(currentFilterSummary())}</div></div>
+      </div>
+    </section>
+    <section class="detail-section">
+      <h3>导出字段选择</h3>
+      <div class="export-field-grid">
+        ${fields.map(field => `<label><input type="checkbox" data-export-field="${escapeHtml(field.key)}" checked /> ${escapeHtml(field.label)}</label>`).join("")}
+      </div>
+    </section>
+    <section class="detail-section export-task">
+      <h3>导出任务状态</h3>
+      <p>确认后生成异步导出任务，状态流为：待生成 -> 生成中 -> 已生成 -> 下载记录。当前为前端 Mock，不下载真实文件。</p>
+      <div class="download-record">最近下载记录：${escapeHtml(activeRole().label)} / ${formatDateTime(new Date())} / ${isDiff ? "差异明细" : mod.title} / XLSX</div>
+    </section>
+  `;
+  const footer = `<button class="btn" type="button" data-action="close-modal">取消</button><button class="btn primary" type="button" data-action="confirm-export-task" data-id="${escapeHtml(rowId)}" data-export-scope="${escapeHtml(scope)}">生成导出任务</button>`;
+  openModal(isDiff ? "导出差异明细" : "导出演示", body, footer);
+}
+
+function exportFieldsFor(mod, isDiff) {
+  if (isDiff) {
+    return ["reconcileId", "period", "channelName", "systemFlowNo", "channelFlowNo", "userId", "tradeType", "systemAmount", "channelAmount", "diffAmount", "diffReason", "suggestion"].map(key => findField(mod, key));
+  }
+  const keys = [...new Set([...displayColumns(mod), ...(mod.fields || []).slice(0, 10).map(field => field.key)])];
+  return keys.map(key => findField(mod, key)).slice(0, 16);
+}
+
+function confirmExportTask(scope, rowId) {
+  const selected = [...document.querySelectorAll("[data-export-field]:checked")].map(item => item.dataset.exportField);
+  if (!selected.length) {
+    showToast("请至少选择一个导出字段");
+    return;
+  }
+  const mod = activeModule();
+  const row = rowId ? findRow(rowId) : { primaryNo: `${mod.title}当前筛选结果`, relatedDocs: currentFilterSummary() };
+  const taskId = `EXPORT-${Date.now()}`;
+  recordAudit(row, scope === "diff" ? "导出对账差异明细" : `导出${mod.title}`, "待生成", "已生成", `字段：${selected.join("、")}`);
+  saveDemoData();
+  const body = `<section class="detail-section export-task">
+    <h3>导出任务已生成</h3>
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-label">任务编号</div><div class="detail-value">${escapeHtml(taskId)}</div></div>
+      <div class="detail-item"><div class="detail-label">任务状态</div><div class="detail-value"><span class="status success">已生成</span></div></div>
+      <div class="detail-item"><div class="detail-label">导出字段</div><div class="detail-value">${escapeHtml(selected.join("、"))}</div></div>
+      <div class="detail-item"><div class="detail-label">下载记录</div><div class="detail-value">${escapeHtml(activeRole().label)} / ${formatDateTime(new Date())}</div></div>
+    </div>
+    <p>真实系统应保存导出任务、下载记录、数据范围和权限点；演示版仅展示交互闭环。</p>
+  </section>`;
+  openModal("导出任务", body, `<button class="btn primary" type="button" data-action="close-modal">完成</button>`);
+}
+
+function currentFilterSummary() {
+  const filters = appState.filters[appState.activeKey] || {};
+  const active = Object.entries(filters).filter(([, value]) => value);
+  if (!active.length) return "未设置筛选条件";
+  return active.map(([key, value]) => `${filterLabel(activeModule(), key)}=${value}`).join("；");
 }
 
 function handleGlobalSearch() {
@@ -2983,11 +3686,14 @@ document.addEventListener("click", event => {
   if (action === "confirmSettle") openSettlementConfirm(rowId);
   if (action === "rejectSettle") openSettlementReturn(rowId);
   if (action === "applyQuota") openQuotaConfirm(rowId);
+  if (["rematch", "markBalanced", "startRefund", "createSupplement", "markDelay", "closeDiff", "exportDiff"].includes(action)) openReconcileAction(rowId, action);
   if (action === "confirm-approve") confirmApproval(rowId, "approve");
   if (action === "confirm-reject") confirmApproval(rowId, "reject");
   if (action === "confirm-settle") confirmSettlement(rowId);
   if (action === "confirm-return-settle") confirmSettlementReturn(rowId);
   if (action === "confirm-quota") confirmQuota(rowId);
+  if (action === "confirm-reconcile-action") confirmReconcileAction(rowId, target.dataset.reconcileAction || "");
+  if (action === "confirm-export-task") confirmExportTask(target.dataset.exportScope || "list", rowId);
   if (action === "confirm-delete") confirmDelete(rowId);
   if (action === "save-form") saveForm(rowId);
   if (action === "open-report-preview") openReportPreview(rowId);
@@ -2995,7 +3701,7 @@ document.addEventListener("click", event => {
   if (action === "open-notification") location.hash = "#/notificationCenter";
   if (action === "open-demo-guide") openHelp();
   if (action === "export") {
-    if (canAction(activeModule(), "export")) showToast("导出演示：真实项目应调用后端 Excel 导出接口");
+    if (canAction(activeModule(), "export")) openExportModal("list", rowId);
     else showToast("当前页面不支持导出");
   }
   if (action === "close-modal") closeModal();
