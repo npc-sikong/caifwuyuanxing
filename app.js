@@ -38,6 +38,36 @@ const quotaStatusMap = {
   rejected: { label: "已驳回", className: "fail" }
 };
 
+const reportStatusMap = {
+  ready: { label: "可生成", className: "success" },
+  generating: { label: "生成中", className: "info" },
+  generated: { label: "已生成", className: "success" },
+  expired: { label: "已过期", className: "muted" }
+};
+
+const reconcileStatusMap = {
+  matched: { label: "已平账", className: "success" },
+  pending: { label: "待对账", className: "pending" },
+  diff: { label: "有差异", className: "fail" },
+  processing: { label: "处理中", className: "info" },
+  closed: { label: "已关闭", className: "muted" }
+};
+
+const refundStatusMap = {
+  applied: { label: "申请中", className: "pending" },
+  reviewing: { label: "审核中", className: "info" },
+  processing: { label: "退款处理中", className: "info" },
+  refunded: { label: "已退款", className: "success" },
+  rejected: { label: "已拒绝", className: "fail" }
+};
+
+const noticeLevelMap = {
+  high: { label: "高优先级", className: "fail" },
+  medium: { label: "中优先级", className: "pending" },
+  low: { label: "低优先级", className: "info" },
+  read: { label: "已读", className: "muted" }
+};
+
 const dictionaries = {
   accountType: { "10": "余额", "20": "积分", "30": "资金池" },
   accountObject: { "10": "商户", "20": "代理", "30": "通道", "40": "私有", "70": "合伙人", "80": "用户" },
@@ -47,7 +77,91 @@ const dictionaries = {
   poolChangeType: { site_recharge: "站点充值", agent_recharge: "代理充值", member_recharge: "会员充值", head_add: "总站增加额度", site_withdraw: "站点提现", agent_withdraw: "代理提现", member_withdraw: "会员提现", head_reduce: "总站减少额度", settlement_deduct: "月结扣款" },
   listType: { "10": "黑名单", "20": "红名单" },
   subjectType: { site: "站点", parentAgent: "上级代理", agent: "代理", childAgent: "下级代理" },
-  ledgerType: { siteLoan: "站点借出", agentDebt: "代理欠款", agentLoan: "代理借出", repayment: "还款核销" }
+  ledgerType: { siteLoan: "站点借出", agentDebt: "代理欠款", agentLoan: "代理借出", repayment: "还款核销" },
+  reportType: { daily: "日资金流水", weekly: "周收支汇总", monthly: "月度财务报表", aging: "账龄分析", forecast: "现金流预测", custom: "自定义报表" },
+  channelType: { bank: "银行", payment: "三方通道", system: "系统账" }
+};
+
+const timeRangeOptions = [
+  { key: "today", label: "今日", factor: 1 },
+  { key: "yesterday", label: "昨日", factor: 0.92 },
+  { key: "week", label: "本周", factor: 5.8 },
+  { key: "month", label: "本月", factor: 22 },
+  { key: "lastMonth", label: "上月", factor: 20 },
+  { key: "quarter", label: "近三月", factor: 62 },
+  { key: "custom", label: "自定义", factor: 12 }
+];
+
+const roleProfiles = {
+  director: {
+    label: "财务运营总监",
+    badge: "全局可见",
+    domains: "all",
+    deniedModules: [],
+    mutating: "all",
+    description: "可查看所有演示模块，并可演示关键审核、扣款、配置和审批动作。"
+  },
+  clerk: {
+    label: "财务专员",
+    badge: "日常处理",
+    domains: ["workbench", "paymentAccount", "cashFlow", "bookTemplateDomain", "customerBalance"],
+    deniedModules: ["riskReport"],
+    mutating: ["add", "edit", "delete", "approve", "reject", "confirmSettle", "rejectSettle", "applyQuota"],
+    description: "负责日常收银、余额、月结和台账处理，不进入研发风险和权限矩阵维护。"
+  },
+  auditor: {
+    label: "财务审核员",
+    badge: "审核角色",
+    domains: ["workbench", "cashFlow", "customerBalance"],
+    deniedModules: ["cashPolicy", "bookPolicy", "bookTemplate", "category", "riskReport"],
+    mutating: ["approve", "reject"],
+    description: "重点处理存款/取款审核、退款复核和异常查看，不维护策略、模板和系统权限。"
+  },
+  siteAdmin: {
+    label: "站点管理员",
+    badge: "站点视角",
+    domains: ["workbench", "paymentAccount", "customerBalance"],
+    deniedModules: ["privateAccount", "quotaAdjust", "riskReport"],
+    mutating: [],
+    description: "站点侧查看资金池、月结和代理往来，不能做总站额度调整和系统配置。"
+  },
+  observer: {
+    label: "只读观察者",
+    badge: "只读演示",
+    domains: "all",
+    deniedModules: [],
+    mutating: [],
+    description: "用于对外演示和评审，所有页面只读，不显示新增、编辑、删除和审批类动作。"
+  }
+};
+
+const mockDataCenter = {
+  updatedAt: "2026-05-23 09:30:00",
+  kpi: {
+    todayIncome: 428560,
+    todayExpense: 214870,
+    receivable: 188000,
+    payable: 156000,
+    monthIncome: 9368000,
+    monthExpense: 7215000,
+    accountBalance: 1181888,
+    turnoverDays: 4.6
+  },
+  trend: [28, 36, 42, 39, 51, 56, 62, 58, 66, 73, 69, 82],
+  expenseTrend: [18, 24, 22, 28, 34, 31, 41, 38, 44, 49, 47, 55],
+  categories: [
+    { label: "会员充值", value: 46, tone: "success" },
+    { label: "代理充值", value: 22, tone: "info" },
+    { label: "站点提现", value: 18, tone: "warning" },
+    { label: "月结扣款", value: 14, tone: "danger" }
+  ],
+  heatmap: [2, 4, 5, 3, 7, 9, 1, 4, 6, 8, 5, 3, 9, 11, 4, 6, 7, 12, 10, 5, 4, 8, 13, 15, 7, 6, 10, 9, 14, 16, 8, 4, 5, 11, 17, 20, 9, 7, 6, 12, 18, 22, 15, 9, 8, 13, 19, 25, 12, 10, 9, 14, 18, 21, 11, 8, 7, 10, 16, 19],
+  warnings: [
+    { label: "华南站点资金池不足", level: "high", route: "monthlySettlement", amount: "缺口 ¥14,000.00" },
+    { label: "渠道对账差异", level: "high", route: "reconcileCenter", amount: "差异 ¥8,800.00" },
+    { label: "代理欠款逾期", level: "medium", route: "agentDebtLedger", amount: "逾期 ¥42,000.00" },
+    { label: "提现模板试算不平衡", level: "medium", route: "trialBalance", amount: "差额 ¥100.00" }
+  ]
 };
 
 const quickActions = {
@@ -89,15 +203,15 @@ const quickActions = {
 };
 
 const fieldGroups = {
-  user: ["userId", "userMobile", "userName", "toUserId", "toUserName", "objectId", "objectName"],
-  trade: ["cashOrderId", "requestId", "relationId", "tradeType", "bookCode", "scene", "bizType"],
-  amount: ["amount", "transAmt", "discount", "balance", "openBalance", "occurredAmount", "debitAmount", "creditAmount", "cashAmount", "poolBalance", "frozenAmount", "availableAmount", "rechargeIncrease", "withdrawDecrease", "headAddAmount", "headReduceAmount", "settlementDeductAmount", "systemTrialAmount", "manualAdjustAmount", "finalDeductAmount", "beforeBalance", "afterBalance", "changeAmount"],
-  status: ["status", "level", "riskLevel", "owner", "handler", "handlerStatus", "deadline", "sla", "settlementStatus", "poolStatus", "quotaStatus", "approvalResult", "approvalTime", "approvalRemark", "repaymentPlanStatus", "writeOffStatus"],
-  book: ["bookOrderId", "bookTitle", "batchId", "batchDetailId", "accountId", "accountType", "accountObject", "bookCategory", "direction", "processId"],
+  user: ["userId", "userMobile", "userName", "toUserId", "toUserName", "objectId", "objectName", "customerName", "customerType"],
+  trade: ["cashOrderId", "requestId", "relationId", "tradeType", "bookCode", "scene", "bizType", "refundId", "originalOrderId", "channelName", "channelType"],
+  amount: ["amount", "transAmt", "discount", "balance", "openBalance", "occurredAmount", "debitAmount", "creditAmount", "cashAmount", "poolBalance", "frozenAmount", "availableAmount", "rechargeIncrease", "withdrawDecrease", "headAddAmount", "headReduceAmount", "settlementDeductAmount", "systemTrialAmount", "manualAdjustAmount", "finalDeductAmount", "beforeBalance", "afterBalance", "changeAmount", "incomeAmount", "expenseAmount", "netAmount", "receivableAmount", "payableAmount", "systemAmount", "channelAmount", "refundAmount"],
+  status: ["status", "level", "riskLevel", "owner", "handler", "handlerStatus", "deadline", "sla", "settlementStatus", "poolStatus", "quotaStatus", "approvalResult", "approvalTime", "approvalRemark", "repaymentPlanStatus", "writeOffStatus", "reportStatus", "reconcileStatus", "refundStatus", "noticeLevel", "readStatus"],
+  book: ["bookOrderId", "bookTitle", "batchId", "batchDetailId", "accountId", "accountType", "accountObject", "bookCategory", "direction", "processId", "reportId", "reportName", "reportType", "reportDimension", "aggregationRule"],
   identity: ["siteId", "siteName", "siteLevel", "principal", "agentCount", "availableCredit"],
   ledger: ["ledgerId", "subjectType", "subjectName", "counterpartyType", "counterpartyName", "ledgerType", "loanAmount", "debtAmount", "repaidAmount", "outstandingAmount", "repaymentProgress", "dueDate", "overdueDays", "ledgerStatus", "relatedLedgerId"],
   settlement: ["settlementId", "settlementMonth", "billNo", "sourceType", "changeType", "formulaDesc", "operatorType", "operateTime"],
-  tech: ["route", "permission", "tableName", "beanName", "riskBean", "policyBean", "messageId", "consumer", "suggestion", "remark"]
+  tech: ["route", "permission", "tableName", "beanName", "riskBean", "policyBean", "messageId", "consumer", "suggestion", "remark", "generatedBy", "generatedTime", "exportFormat", "retention", "diffReason"]
 };
 
 const menuGroups = [
@@ -115,6 +229,57 @@ const pageActionDefaults = {
   workflow: { search: true, detail: true, add: false, edit: false, delete: false, export: true },
   check: { search: true, detail: true, add: false, edit: false, delete: false, export: true },
   reference: { search: true, detail: true, add: false, edit: false, delete: false, export: true }
+};
+
+const domainProfiles = {
+  workbench: {
+    owner: "财务运营总监",
+    objective: "用一屏判断今日财务中心是否稳定，优先处理待办、异常和高风险事项。",
+    dataScope: "聚合收银、记账、余额、月结、往来和风控，不替代各独立管理页。",
+    reportTitle: "经营驾驶舱",
+    reportFocus: ["今日待办", "异常风险", "处理 SLA"],
+    rule: "工作台只做汇总、提醒和跳转，不承载底层数据维护。"
+  },
+  paymentAccount: {
+    owner: "总站财务",
+    objective: "管理出入款账户、站点资金池、月结扣款和总站额度调整。",
+    dataScope: "关注站点可提现资金池、冻结金额、月结应扣、额度调整和资金池流水。",
+    reportTitle: "出入款资金报表",
+    reportFocus: ["可用资金池", "月结扣款", "额度调整"],
+    rule: "月结只扣站点资金池，资金不足必须阻断，不扣代理或会员个人余额。"
+  },
+  cashFlow: {
+    owner: "财务审核 / 风控运营",
+    objective: "围绕存款、取款、收银流水、收银策略和交易风控完成审核与排障。",
+    dataScope: "关注申请状态、交易类型、记账码、金额、失败原因、名单命中和风控策略。",
+    reportTitle: "收银交易报表",
+    reportFocus: ["待审申请", "成功/失败流水", "风控命中"],
+    rule: "收银申请有审核弹窗；收银策略与记账策略独立维护，不合并权限。"
+  },
+  bookTemplateDomain: {
+    owner: "财务配置 / 研发支持",
+    objective: "管理记账模板、记账策略、凭证生成和试算平衡，保障借贷落账正确。",
+    dataScope: "关注记账码、借贷方向、会计分类、金额 Bean、凭证批次和试算差额。",
+    reportTitle: "记账质量报表",
+    reportFocus: ["模板覆盖", "试算平衡", "凭证归档"],
+    rule: "借贷不平衡不得进入余额更新；模板和策略属于高影响配置。"
+  },
+  customerBalance: {
+    owner: "财务运营 / 站点财务",
+    objective: "查询客户余额、账户开通、站点身份和站点/代理往来台账。",
+    dataScope: "关注账户对象、账户类型、余额、发生额、未结清往来、逾期和还款核销。",
+    reportTitle: "客户资金报表",
+    reportFocus: ["余额结构", "账户开通", "往来风险"],
+    rule: "会员只参与余额和交易流水，不允许进入借款、欠款或核销台账。"
+  },
+  reference: {
+    owner: "研发负责人 / 产品经理",
+    objective: "沉淀表关系、状态字典、代码风险和跨模块策略边界。",
+    dataScope: "关注表结构、权限、路径、编码、现状风险和后续真实接口设计。",
+    reportTitle: "研发参考清单",
+    reportFocus: ["表关系", "状态字典", "代码风险"],
+    rule: "研发参考页只读，不作为日常运营处理入口。"
+  }
 };
 
 const moduleCatalog = {
@@ -557,13 +722,16 @@ const moduleCatalog = {
   riskReport: riskReportModule()
 };
 
+applyFormalDemoEnhancements();
 applyDomainMetadata();
 
 const appState = {
   activeKey: "dashboard",
   data: {},
   filters: {},
-  collapsedMenuGroups: loadCollapsedMenuGroups()
+  collapsedMenuGroups: loadCollapsedMenuGroups(),
+  roleKey: loadStoredValue("financeDemoRole", "director"),
+  timeRange: loadStoredValue("financeDemoTimeRange", "today")
 };
 
 function metric(label, value, note, tone = "info") {
@@ -576,6 +744,58 @@ function quick(label, target, tone = "") {
 
 function row(data) {
   return data;
+}
+
+function applyFormalDemoEnhancements() {
+  insertMenuItems("workbench", ["notificationCenter"], "after", "exceptionCenter");
+  insertMenuItems("paymentAccount", ["paymentAccountReport"], "after", "fundPoolFlow");
+  insertMenuItems("cashFlow", ["refundManage", "reconcileCenter"], "after", "cashHistory");
+  insertMenuItems("bookTemplateDomain", ["reportCenter", "reportBuilder"], "after", "bookTemplateHome");
+
+  Object.assign(moduleCatalog, {
+    notificationCenter: notificationCenterModule(),
+    paymentAccountReport: paymentAccountReportModule(),
+    refundManage: refundManageModule(),
+    reconcileCenter: reconcileCenterModule(),
+    reportCenter: reportCenterModule(),
+    reportBuilder: reportBuilderModule()
+  });
+
+  moduleCatalog.dashboard.summary = [
+    metric("今日收入", toCurrency(mockDataCenter.kpi.todayIncome), "较昨日 +8.2%", "success"),
+    metric("今日支出", toCurrency(mockDataCenter.kpi.todayExpense), "提现/月结/费用", "warning"),
+    metric("待收款", toCurrency(mockDataCenter.kpi.receivable), "往来应收", "danger"),
+    metric("待付款", toCurrency(mockDataCenter.kpi.payable), "月结与费用", "warning"),
+    metric("本月收入", toCurrency(mockDataCenter.kpi.monthIncome), "充值与调整", "success"),
+    metric("本月支出", toCurrency(mockDataCenter.kpi.monthExpense), "提现与扣款", "warning"),
+    metric("账户余额", toCurrency(mockDataCenter.kpi.accountBalance), "客户余额汇总", "info"),
+    metric("资金周转天数", `${mockDataCenter.kpi.turnoverDays} 天`, "模拟指标", "info")
+  ];
+  moduleCatalog.dashboard.quickActions = [
+    quick("待办中心", "todoCenter", "danger"),
+    quick("异常预警", "exceptionCenter", "danger"),
+    quick("通知中心", "notificationCenter"),
+    quick("报表中心", "reportCenter"),
+    quick("渠道对账", "reconcileCenter", "danger"),
+    quick("月结账单", "monthlySettlement", "danger"),
+    quick("存取款审核", "cashRequest", "danger")
+  ];
+  moduleCatalog.dashboard.help.notes = [
+    "驾驶舱时间范围会影响页面图表和演示指标，不调用后端。",
+    "图表使用本地原生 SVG/CSS 实现，适合离线和 GitHub Pages 演示。",
+    "角色切换会影响菜单和按钮权限展示，便于向不同受众演示。"
+  ];
+}
+
+function insertMenuItems(domainKey, keys, position = "after", anchor = "") {
+  const group = menuGroups.find(item => item.domainKey === domainKey);
+  if (!group) return;
+  keys.forEach(key => {
+    group.items = group.items.filter(item => item !== key);
+  });
+  const anchorIndex = anchor ? group.items.indexOf(anchor) : -1;
+  const index = anchorIndex >= 0 ? anchorIndex + (position === "after" ? 1 : 0) : group.items.length;
+  group.items.splice(index, 0, ...keys);
 }
 
 function operationalModule(config) {
@@ -1008,6 +1228,157 @@ function strategyModule() {
   });
 }
 
+function notificationCenterModule() {
+  return operationalModule({
+    title: "通知中心",
+    subtitle: "工作台",
+    pageType: "overview",
+    desc: "集中展示待审核、异常、月结、资金池不足、报表生成等提醒，帮助不同角色快速进入处理页面。",
+    table: "notification_center_demo",
+    route: "/finance/demo/notification",
+    permission: "demo:finance:notification",
+    scenario: "财务运营总监用通知中心确认哪些事项需要今天处理，审核员和站点管理员只看到自己权限内的提醒。",
+    summary: [metric("未读通知", "12", "高优先级 4 条", "danger"), metric("月结提醒", "3", "待扣/资金不足", "warning"), metric("对账差异", "2", "需渠道复核", "danger"), metric("报表完成", "5", "可下载预览", "success")],
+    quickActions: [quick("异常预警", "exceptionCenter", "danger"), quick("月结账单", "monthlySettlement", "danger"), quick("渠道对账", "reconcileCenter", "danger"), quick("报表中心", "reportCenter")],
+    columns: ["noticeId", "notificationType", "noticeLevel", "title", "targetModule", "owner", "deadline", "readStatus"],
+    filters: ["notificationType", "noticeLevel", "title", "readStatus"],
+    fields: commonFields(["noticeId", "notificationType", "noticeLevel", "title", "targetModule", "owner", "deadline", "readStatus", "route", "suggestion", "operateTime"]),
+    rows: [
+      row({ noticeId: "NOTICE-20260523001", notificationType: "月结", noticeLevel: "high", title: "华南站点月结资金池不足", targetModule: "月结账单", owner: "总站财务", deadline: "今日 12:00", readStatus: "未读", route: "#/monthlySettlement", suggestion: "先补额度或退回调整", operateTime: "2026-05-23 09:10:00" }),
+      row({ noticeId: "NOTICE-20260523002", notificationType: "对账", noticeLevel: "high", title: "支付宝通道对账差异 8800 元", targetModule: "渠道对账", owner: "财务运营", deadline: "30 分钟", readStatus: "未读", route: "#/reconcileCenter", suggestion: "核对渠道流水和系统流水", operateTime: "2026-05-23 09:12:00" }),
+      row({ noticeId: "NOTICE-20260523003", notificationType: "审核", noticeLevel: "medium", title: "取款申请超过 20 分钟未处理", targetModule: "收银申请", owner: "财务审核", deadline: "10 分钟", readStatus: "未读", route: "#/cashRequest", suggestion: "进入存取款审核", operateTime: "2026-05-23 09:16:00" }),
+      row({ noticeId: "NOTICE-20260523004", notificationType: "报表", noticeLevel: "low", title: "月度财务报表已生成", targetModule: "报表中心", owner: "财务运营总监", deadline: "今日", readStatus: "已读", route: "#/reportCenter", suggestion: "可预览或导出演示", operateTime: "2026-05-23 09:18:00" })
+    ],
+    help: pageHelp("通知中心", "跨模块提醒和待办入口", ["notification_center_demo"], ["通知中心只做提醒、跳转和演示，不替代真实消息中心。", "不同角色应看到不同权限范围的通知。", "高优先级通知应包含责任人、SLA 和目标模块。"], ["真实开发需对接消息订阅、已读状态、推送渠道和权限过滤。"])
+  });
+}
+
+function paymentAccountReportModule() {
+  return operationalModule({
+    title: "出入款账户报表",
+    subtitle: "出入款帐户",
+    pageType: "overview",
+    desc: "按站点资金池、月结扣款、总站额度调整和资金池流水生成出入款账户经营报表。",
+    table: "payment_account_report_demo",
+    route: "/finance/demo/paymentAccount/report",
+    permission: "demo:finance:paymentAccount:report",
+    scenario: "总站财务在月结前后查看各站点资金池充足率、扣款结果和额度调整影响。",
+    summary: [metric("可用资金池", "¥304,000.00", "站点可提现", "success"), metric("本月加额", "¥70,000.00", "总站增加额度", "success"), metric("本月减额", "¥21,000.00", "总站减少额度", "warning"), metric("月结扣款", "¥30,000.00", "已扣款", "danger")],
+    quickActions: [quick("站点资金池", "siteFundPool"), quick("月结账单", "monthlySettlement"), quick("资金池流水", "fundPoolFlow"), quick("报表中心", "reportCenter")],
+    columns: ["reportId", "reportName", "period", "siteName", "incomeAmount", "expenseAmount", "netAmount", "reportStatus"],
+    filters: ["reportName", "period", "siteName", "reportStatus"],
+    fields: commonFields(["reportId", "reportName", "reportType", "period", "siteName", "incomeAmount", "expenseAmount", "netAmount", "generatedBy", "generatedTime", "reportStatus", "suggestion"]),
+    rows: [
+      row({ reportId: "PAR-202605-HED", reportName: "华东站点资金池月报", reportType: "monthly", period: "2026-05", siteName: "华东站点", incomeAmount: "470000.00", expenseAmount: "226000.00", netAmount: "244000.00", generatedBy: "总站财务", generatedTime: "2026-05-23 09:00:00", reportStatus: "generated", suggestion: "资金池充足，月结可正常推进" }),
+      row({ reportId: "PAR-202605-SOU", reportName: "华南站点资金池月报", reportType: "monthly", period: "2026-05", siteName: "华南站点", incomeAmount: "200000.00", expenseAmount: "214000.00", netAmount: "-14000.00", generatedBy: "总站财务", generatedTime: "2026-05-23 09:00:00", reportStatus: "generated", suggestion: "资金池不足，需额度调整或月结退回" })
+    ],
+    help: pageHelp("出入款账户报表", "出入款资金分析", ["fund_pool_demo", "fund_pool_flow_demo", "monthly_settlement_demo"], ["报表用于解释站点资金池从哪里增加、从哪里减少。", "月结扣款只扣站点资金池，不能扣代理或会员个人余额。", "负净额或资金池不足需要进入异常预警。"], ["当前为演示报表，真实开发需统一资金池流水和月结账单的数据口径。"])
+  });
+}
+
+function refundManageModule() {
+  return operationalModule({
+    title: "退款管理",
+    subtitle: "收银流水",
+    pageType: "management",
+    desc: "演示退款申请、审核、退款处理中、已退款和已拒绝状态流，用于补齐收款后的逆向流程。",
+    table: "refund_manage_demo",
+    route: "/finance/demo/refund",
+    permission: "demo:finance:refund",
+    scenario: "财务审核员对收银流水发起的退款申请进行复核，财务运营追踪退款结果和原始交易。",
+    actions: { approve: true, reject: true },
+    summary: [metric("退款申请", "7", "待审核 3", "warning"), metric("退款中", "2", "等待通道回调", "info"), metric("今日已退", "¥18,600.00", "5 笔", "success"), metric("拒绝", "1", "风控不通过", "danger")],
+    quickActions: [quick("收银流水", "cashOrder"), quick("渠道对账", "reconcileCenter"), quick("异常预警", "exceptionCenter", "danger")],
+    columns: ["refundId", "originalOrderId", "userName", "tradeType", "refundAmount", "refundStatus", "handler"],
+    filters: ["refundId", "originalOrderId", "userName", "refundStatus"],
+    fields: commonFields(["refundId", "originalOrderId", "cashOrderId", "userId", "userMobile", "userName", "tradeType", "refundAmount", "refundStatus", "handler", "approvalTime", "approvalRemark", "route", "suggestion"]),
+    rows: [
+      row({ refundId: "REFUND-20260523001", originalOrderId: "CASH202605220002", cashOrderId: "CASH202605220002", userId: "1142889689825594222", userMobile: "13700000000", userName: "充值用户", tradeType: "recharge_10", refundAmount: "500.00", refundStatus: "applied", status: "10", handler: "财务审核", approvalTime: "", approvalRemark: "", route: "#/cashOrder", suggestion: "核对原始收银流水和渠道到账" }),
+      row({ refundId: "REFUND-20260523002", originalOrderId: "CASH202605220011", cashOrderId: "CASH202605220011", userId: "1142889689825594999", userMobile: "13500000000", userName: "渠道差异用户", tradeType: "recharge_10", refundAmount: "2600.00", refundStatus: "reviewing", status: "10", handler: "财务审核", approvalTime: "", approvalRemark: "", route: "#/reconcileCenter", suggestion: "与渠道对账差异一起复核" }),
+      row({ refundId: "REFUND-20260522003", originalOrderId: "CASH202605210008", cashOrderId: "CASH202605210008", userId: "1142889689825594888", userMobile: "13400000000", userName: "已退款用户", tradeType: "withdraw", refundAmount: "15500.00", refundStatus: "refunded", status: "00", handler: "系统", approvalTime: "2026-05-22 16:20:00", approvalRemark: "通道退款成功", route: "#/cashHistory", suggestion: "已完成退款归档" })
+    ],
+    help: pageHelp("退款管理", "收银逆向流程管理", ["refund_manage_demo", "fin_cash_order"], ["退款流程：申请中 -> 审核中 -> 退款处理中 -> 已退款/已拒绝。", "退款必须关联原始收银流水，不应脱离原始交易单独处理。", "退款审核为演示操作，只更新本地 Mock。"], ["真实开发需对接退款接口、通道回调、幂等校验、原单状态和对账差异处理。"])
+  });
+}
+
+function reconcileCenterModule() {
+  return operationalModule({
+    title: "渠道对账",
+    subtitle: "收银流水",
+    pageType: "check",
+    desc: "按银行、三方通道和系统流水展示对账结果、差异原因和处理状态。",
+    table: "reconcile_center_demo",
+    route: "/finance/demo/reconcile",
+    permission: "demo:finance:reconcile",
+    scenario: "财务运营每日对银行/通道流水与系统收银流水进行核对，差异进入退款、补单或异常预警。",
+    summary: [metric("待对账", "18", "今日批次", "warning"), metric("已平账", "126", "自动匹配", "success"), metric("差异金额", "¥8,800.00", "2 笔", "danger"), metric("处理中", "3", "等待通道回执", "info")],
+    quickActions: [quick("收银流水", "cashOrder"), quick("退款管理", "refundManage", "danger"), quick("异常预警", "exceptionCenter", "danger")],
+    columns: ["reconcileId", "channelName", "channelType", "systemAmount", "channelAmount", "diffAmount", "reconcileStatus", "handler"],
+    filters: ["reconcileId", "channelName", "channelType", "reconcileStatus"],
+    fields: commonFields(["reconcileId", "channelName", "channelType", "period", "systemAmount", "channelAmount", "diffAmount", "diffReason", "reconcileStatus", "handler", "suggestion", "route"]),
+    rows: [
+      row({ reconcileId: "REC-20260523001", channelName: "支付宝通道", channelType: "payment", period: "2026-05-23", systemAmount: "186000.00", channelAmount: "177200.00", diffAmount: "8800.00", diffReason: "通道回调延迟/疑似漏单", reconcileStatus: "diff", handler: "财务运营", suggestion: "进入差异处理，必要时发起退款或补单", route: "#/refundManage" }),
+      row({ reconcileId: "REC-20260523002", channelName: "工商银行", channelType: "bank", period: "2026-05-23", systemAmount: "242560.00", channelAmount: "242560.00", diffAmount: "0.00", diffReason: "自动匹配", reconcileStatus: "matched", handler: "系统", suggestion: "已平账", route: "#/cashOrder" }),
+      row({ reconcileId: "REC-20260523003", channelName: "微信支付", channelType: "payment", period: "2026-05-23", systemAmount: "56000.00", channelAmount: "56000.00", diffAmount: "0.00", diffReason: "等待清算文件确认", reconcileStatus: "processing", handler: "财务运营", suggestion: "等待通道清算文件", route: "#/cashOrder" })
+    ],
+    help: pageHelp("渠道对账", "系统/银行/通道对账检查", ["reconcile_center_demo", "fin_cash_order", "fin_cash_order_history"], ["对账页只做差异定位，不直接修改收银流水。", "差异应明确来源：系统漏单、通道延迟、退款未回调、手工调整。", "高差异金额应进入异常预警和通知中心。"], ["真实开发需接入渠道账单文件、自动匹配规则、差异处理闭环和对账审计。"])
+  });
+}
+
+function reportCenterModule() {
+  return operationalModule({
+    title: "报表中心",
+    subtitle: "记账模板",
+    pageType: "overview",
+    desc: "集中展示标准报表、经营分析、账龄分析和现金流预测，供财务运营总监汇报使用。",
+    table: "report_center_demo",
+    route: "/finance/demo/report",
+    permission: "demo:finance:report",
+    scenario: "管理层汇报前，从报表中心生成日报、月报、损益、账龄和现金流预测等演示报表。",
+    summary: [metric("标准报表", "7", "日报/月报/账龄", "info"), metric("今日生成", "5", "可预览", "success"), metric("待生成", "2", "现金流预测", "warning"), metric("异常报表", "1", "数据差异", "danger")],
+    quickActions: [quick("自定义报表", "reportBuilder"), quick("出入款报表", "paymentAccountReport"), quick("渠道对账", "reconcileCenter"), quick("客户余额", "customerBalanceHome")],
+    columns: ["reportId", "reportName", "reportType", "period", "reportDimension", "generatedTime", "reportStatus"],
+    filters: ["reportName", "reportType", "period", "reportStatus"],
+    fields: commonFields(["reportId", "reportName", "reportType", "period", "reportDimension", "aggregationRule", "incomeAmount", "expenseAmount", "netAmount", "generatedBy", "generatedTime", "exportFormat", "reportStatus", "suggestion"]),
+    rows: [
+      row({ reportId: "RPT-DAILY-20260523", reportName: "日资金流水报表", reportType: "daily", period: "2026-05-23", reportDimension: "站点/通道/交易类型", aggregationRule: "收入、支出、净额", incomeAmount: "428560.00", expenseAmount: "214870.00", netAmount: "213690.00", generatedBy: "财务运营总监", generatedTime: "2026-05-23 09:30:00", exportFormat: "PDF/XLSX", reportStatus: "generated", suggestion: "可用于晨会汇报" }),
+      row({ reportId: "RPT-MONTH-202605", reportName: "月度财务报表（P&L）", reportType: "monthly", period: "2026-05", reportDimension: "收入/成本/费用/利润", aggregationRule: "按会计分类聚合", incomeAmount: "9368000.00", expenseAmount: "7215000.00", netAmount: "2153000.00", generatedBy: "财务运营总监", generatedTime: "2026-05-23 09:20:00", exportFormat: "PDF/XLSX", reportStatus: "generated", suggestion: "可预览损益结构" }),
+      row({ reportId: "RPT-AGING-202605", reportName: "账龄分析报表", reportType: "aging", period: "2026-05", reportDimension: "站点/代理/逾期天数", aggregationRule: "未结清金额按账龄分段", receivableAmount: "188000.00", payableAmount: "156000.00", netAmount: "32000.00", generatedBy: "系统", generatedTime: "2026-05-23 08:50:00", exportFormat: "XLSX", reportStatus: "generated", suggestion: "代理欠款逾期需重点跟进" }),
+      row({ reportId: "RPT-CASHFLOW-FC", reportName: "现金流量预测报表", reportType: "forecast", period: "2026-06", reportDimension: "站点/资金池/月结", aggregationRule: "基于历史充值提现和待扣月结预测", incomeAmount: "0.00", expenseAmount: "0.00", netAmount: "0.00", generatedBy: "系统", generatedTime: "", exportFormat: "PDF", reportStatus: "ready", suggestion: "演示生成预测报表" })
+    ],
+    help: pageHelp("报表中心", "正式财务报表展示", ["report_center_demo", "fin_cash_order", "fin_book_order", "fin_balance", "fund_pool_flow_demo", "ledger_demo"], ["报表中心提供管理层视角，不直接修改业务数据。", "标准报表包括日报、周报、月报、损益、账龄和现金流预测。", "生成、预览、导出均为前端演示，不调用真实报表服务。"], ["真实开发需统一报表口径、生成任务、导出记录、权限和数据快照。"])
+  });
+}
+
+function reportBuilderModule() {
+  return operationalModule({
+    title: "自定义报表",
+    subtitle: "记账模板",
+    pageType: "workflow",
+    desc: "演示字段选择、维度筛选、聚合口径、预览和导出格式，用于正式后台的自定义报表设计。",
+    table: "report_builder_demo",
+    route: "/finance/demo/reportBuilder",
+    permission: "demo:finance:reportBuilder",
+    scenario: "财务运营总监临时需要按站点、代理、交易类型或资金池来源组合报表时使用。",
+    summary: [metric("可选字段", "32", "收银/余额/月结/往来", "info"), metric("保存模板", "4", "演示模板", "success"), metric("可导出格式", "3", "PDF/XLSX/CSV", "warning")],
+    quickActions: [quick("报表中心", "reportCenter"), quick("客户余额", "customerBalanceHome"), quick("出入款报表", "paymentAccountReport")],
+    columns: ["reportId", "reportName", "reportDimension", "aggregationRule", "exportFormat", "reportStatus"],
+    filters: ["reportName", "reportDimension", "exportFormat", "reportStatus"],
+    fields: commonFields(["reportId", "reportName", "reportType", "reportDimension", "aggregationRule", "exportFormat", "generatedBy", "generatedTime", "reportStatus", "suggestion"]),
+    rows: [
+      row({ reportId: "CUSTOM-20260523001", reportName: "站点资金池变动自定义报表", reportType: "custom", reportDimension: "站点 + 变动类型 + 月份", aggregationRule: "sum(changeAmount), count(flowId)", exportFormat: "XLSX", generatedBy: "财务运营总监", generatedTime: "2026-05-23 09:40:00", reportStatus: "generated", suggestion: "用于月结复核" }),
+      row({ reportId: "CUSTOM-20260523002", reportName: "代理欠款账龄报表", reportType: "custom", reportDimension: "站点 + 代理 + 逾期天数", aggregationRule: "sum(outstandingAmount)", exportFormat: "PDF", generatedBy: "站点财务", generatedTime: "", reportStatus: "ready", suggestion: "用于站点催收跟进" })
+    ],
+    flow: [
+      ["选择数据域", "收银、记账、余额、月结、往来台账。", "reportBuilder"],
+      ["选择字段", "勾选金额、状态、主体和时间字段。", "reportBuilder"],
+      ["设置聚合", "按站点、代理、交易类型或时间汇总。", "reportBuilder"],
+      ["预览导出", "生成演示预览和下载提示。", "reportCenter"]
+    ],
+    help: pageHelp("自定义报表", "报表字段和维度配置", ["report_builder_demo"], ["自定义报表只能读取数据，不直接写业务表。", "字段、筛选、排序、聚合和格式均为演示配置。", "真实系统应限制敏感字段和跨站点数据权限。"], ["当前为前端演示，真实开发需设计报表模板表、字段权限和异步生成任务。"])
+  });
+}
+
 function relationModule() {
   const tables = [
     ["comm_code_master", "收银流水", "trade_type -> book_code", "参数字典和记账码映射"],
@@ -1028,7 +1399,10 @@ function relationModule() {
     ["fin_black_list", "收银流水", "user_id + book_code", "名单控制"],
     ["ledger_demo", "客户余额", "site_id + subject + counterparty", "产品补充原型，真实开发需新增表"],
     ["settlement_demo", "出入款帐户", "settlement_month + site_id", "产品补充原型，真实开发需新增月结表"],
-    ["fund_pool_demo", "出入款帐户", "site_id", "产品补充原型，真实开发需新增资金池和流水表"]
+    ["fund_pool_demo", "出入款帐户", "site_id", "产品补充原型，真实开发需新增资金池和流水表"],
+    ["report_center_demo", "记账模板", "period + dimension", "正式演示补充，真实开发需新增报表任务和快照"],
+    ["reconcile_center_demo", "收银流水", "channel + period", "正式演示补充，真实开发需对接渠道账单"],
+    ["refund_manage_demo", "收银流水", "original_order_id", "正式演示补充，真实开发需退款接口和回调"]
   ];
   const mod = tableModule("表关系", "研发参考", "以运营业务域重新组织 16 张表，保留主要关联键和用途。", "schema_relation_demo", "/finance/demo/relation", "demo:finance:relation", ["tableName", "domain", "relation", "usage"], ["tableName", "domain"], tables.map(item => row({ tableName: item[0], domain: item[1], relation: item[2], usage: item[3], status: "00" })), "表关系页给研发参考，不作为日常运营入口。");
   mod.pageType = "reference";
@@ -1049,7 +1423,12 @@ function statusDictModule() {
     row({ dict: "台账状态", code: "overdue", name: "已逾期", scene: "到期未结清的代理欠款" }),
     row({ dict: "月结状态", code: "pending", name: "待扣款", scene: "月结账单可确认扣款" }),
     row({ dict: "月结状态", code: "insufficient", name: "资金不足", scene: "资金池不足时阻断扣款" }),
-    row({ dict: "资金池变动", code: "settlement_deduct", name: "月结扣款", scene: "减少站点资金池" })
+    row({ dict: "资金池变动", code: "settlement_deduct", name: "月结扣款", scene: "减少站点资金池" }),
+    row({ dict: "退款状态", code: "applied", name: "申请中", scene: "退款管理状态流" }),
+    row({ dict: "退款状态", code: "processing", name: "退款处理中", scene: "等待通道退款回调" }),
+    row({ dict: "对账状态", code: "diff", name: "有差异", scene: "渠道和系统金额不一致" }),
+    row({ dict: "报表状态", code: "generated", name: "已生成", scene: "报表中心可预览或导出" }),
+    row({ dict: "通知优先级", code: "high", name: "高优先级", scene: "进入通知中心和异常预警" })
   ], "状态字典建议后续沉淀为前端公共字典或后端枚举接口。");
   mod.pageType = "reference";
   return mod;
@@ -1064,7 +1443,9 @@ function riskReportModule() {
     row({ risk: "金额单位混用", module: "全链路", level: "中", suggestion: "明确分制或 BigDecimal 元制", status: "10" }),
     row({ risk: "测试接口暴露", module: "/finance/test", level: "中", suggestion: "仅开发环境启用或删除", status: "09" }),
     row({ risk: "往来台账未实现", module: "ledger_demo", level: "中", suggestion: "新增表、审批流、还款核销接口后再接真实数据", status: "10" }),
-    row({ risk: "月结中心未实现", module: "settlement_demo", level: "中", suggestion: "新增月结单、资金池、资金池流水和扣款接口后再接真实数据", status: "10" })
+    row({ risk: "月结中心未实现", module: "settlement_demo", level: "中", suggestion: "新增月结单、资金池、资金池流水和扣款接口后再接真实数据", status: "10" }),
+    row({ risk: "报表与对账仅为原型", module: "report/reconcile/refund_demo", level: "中", suggestion: "真实接入前需设计报表任务、渠道账单、退款回调和差异处理闭环", status: "10" }),
+    row({ risk: "前端角色切换不是安全边界", module: "role_switch_demo", level: "高", suggestion: "真实系统必须由后端权限点控制菜单、接口和数据范围", status: "10" })
   ], "高风险项应在真实 API 接入前优先修复。");
   mod.pageType = "reference";
   return mod;
@@ -1087,6 +1468,8 @@ function commonFields(keys) {
     item: "事项", bizType: "业务类型", level: "等级", owner: "负责人", handler: "处理人", deadline: "时限",
     status: "状态", suggestion: "处理建议", route: "跳转路径", module: "模块", riskLevel: "风险等级",
     handlerStatus: "处理状态", sla: "SLA", processRecord: "处理记录", repaymentPlanStatus: "还款计划", writeOffStatus: "核销状态",
+    reportStatus: "报表状态", reconcileStatus: "对账状态", refundStatus: "退款状态",
+    noticeLevel: "通知优先级", readStatus: "阅读状态",
     tableName: "表名", accountObject: "账户对象", accountType: "账户类型", accountCount: "账户数量",
     balance: "余额", openBalance: "期初余额", occurredAmount: "发生额", accountId: "账套号",
     userName: "用户名", processId: "记账主体", direction: "方向", closeOrder: "最近流水",
@@ -1097,12 +1480,19 @@ function commonFields(keys) {
     siteRechargeAmount: "站点充值", agentRechargeAmount: "代理充值", memberRechargeAmount: "会员充值", siteWithdrawAmount: "站点提现", agentWithdrawAmount: "代理提现", memberWithdrawAmount: "会员提现",
     settlementStatus: "月结状态", poolStatus: "资金池状态", quotaStatus: "额度状态", flowId: "流水号", adjustId: "调整单号", sourceType: "来源类型", changeType: "变动类型", changeAmount: "变动金额", operatorType: "操作类型", formulaDesc: "试算口径",
     requestId: "申请 ID", userId: "用户 ID", userMobile: "手机号", tradeType: "交易类型", amount: "金额",
+    customerName: "客户名称", customerType: "客户类型", applicant: "申请人",
     approvalResult: "审核结果", approvalTime: "审核时间", approvalRemark: "审核备注",
     toUserId: "目标用户 ID", toUserName: "目标用户", details: "详情", cashOrderId: "收银流水 ID",
     relationId: "关联 ID", bookCode: "记账码", transAmt: "交易金额", discount: "优惠", fail: "失败原因",
+    refundId: "退款单号", originalOrderId: "原始订单", refundAmount: "退款金额",
+    channelName: "渠道名称", channelType: "渠道类型", reconcileId: "对账批次", systemAmount: "系统金额", channelAmount: "渠道金额", diffReason: "差异原因",
     scene: "场景", cashAmount: "交易金额", riskPoint: "风险点", balanceImpact: "余额影响",
     bookOrderId: "凭证 ID", bookTitle: "标题", batchId: "批次 ID", batchDetailId: "明细 ID",
     debitAmount: "借方金额", creditAmount: "贷方金额", diffAmount: "差额", title: "标题",
+    reportId: "报表 ID", reportName: "报表名称", reportType: "报表类型", reportDimension: "报表维度", aggregationRule: "聚合口径",
+    incomeAmount: "收入金额", expenseAmount: "支出/费用金额", netAmount: "净额", receivableAmount: "应收金额", payableAmount: "应付金额",
+    generatedBy: "生成人", generatedTime: "生成时间", exportFormat: "导出格式", period: "周期",
+    noticeId: "通知 ID", notificationType: "通知类型", targetModule: "目标模块",
     riskBean: "风控 Bean", operators: "操作符", value: "策略值", sort: "排序", type: "名单类型",
     remark: "备注", policyName: "策略名称", beanName: "Bean 名称", bookCategory: "记账分类",
     code: "参数大类", codeKey: "参数键", value1: "属性1/记账码", updateTime: "更新时间",
@@ -1128,13 +1518,20 @@ function inferType(key) {
   if (key === "settlementStatus") return "settlementStatus";
   if (key === "poolStatus") return "poolStatus";
   if (key === "quotaStatus") return "quotaStatus";
+  if (key === "reportStatus") return "reportStatus";
+  if (key === "reconcileStatus") return "reconcileStatus";
+  if (key === "refundStatus") return "refundStatus";
+  if (key === "noticeLevel") return "noticeLevel";
+  if (key === "readStatus") return "readStatus";
+  if (key === "reportType") return "reportType";
+  if (key === "channelType") return "channelType";
   if (key === "type") return "listType";
   if (key === "subjectType" || key === "counterpartyType") return "subjectType";
   if (key === "ledgerType") return "ledgerType";
   if (key === "ledgerStatus") return "ledgerStatus";
   if (key === "repaymentProgress") return "progress";
   if (key === "overdueDays") return "overdue";
-  if (["amount", "transAmt", "discount", "balance", "openBalance", "occurredAmount", "debitAmount", "creditAmount", "diffAmount", "cashAmount", "loanAmount", "debtAmount", "repaidAmount", "outstandingAmount", "availableCredit", "poolBalance", "frozenAmount", "availableAmount", "rechargeIncrease", "withdrawDecrease", "headAddAmount", "headReduceAmount", "settlementDeductAmount", "systemTrialAmount", "manualAdjustAmount", "finalDeductAmount", "beforeBalance", "afterBalance", "changeAmount", "siteRechargeAmount", "agentRechargeAmount", "memberRechargeAmount", "siteWithdrawAmount", "agentWithdrawAmount", "memberWithdrawAmount"].includes(key)) return "money";
+  if (["amount", "transAmt", "discount", "balance", "openBalance", "occurredAmount", "debitAmount", "creditAmount", "diffAmount", "cashAmount", "loanAmount", "debtAmount", "repaidAmount", "outstandingAmount", "availableCredit", "poolBalance", "frozenAmount", "availableAmount", "rechargeIncrease", "withdrawDecrease", "headAddAmount", "headReduceAmount", "settlementDeductAmount", "systemTrialAmount", "manualAdjustAmount", "finalDeductAmount", "beforeBalance", "afterBalance", "changeAmount", "siteRechargeAmount", "agentRechargeAmount", "memberRechargeAmount", "siteWithdrawAmount", "agentWithdrawAmount", "memberWithdrawAmount", "incomeAmount", "expenseAmount", "netAmount", "receivableAmount", "payableAmount", "systemAmount", "channelAmount", "refundAmount"].includes(key)) return "money";
   if (["level", "riskLevel"].includes(key)) return "level";
   return "text";
 }
@@ -1152,10 +1549,13 @@ function applyDomainMetadata() {
 }
 
 function initData() {
+  const seedData = {};
   Object.entries(moduleCatalog).forEach(([key, mod]) => {
-    appState.data[key] = (mod.rows || []).map((item, index) => ({ __id: `${key}-${index + 1}`, ...item }));
+    seedData[key] = (mod.rows || []).map((item, index) => ({ __id: `${key}-${index + 1}`, ...item }));
     appState.filters[key] = {};
   });
+  const savedData = loadDemoData();
+  appState.data = { ...seedData, ...savedData };
 }
 
 function escapeHtml(value) {
@@ -1190,6 +1590,25 @@ function formatValue(value, type) {
     const status = quotaStatusMap[raw] || { label: raw || "未设置", className: "muted" };
     return `<span class="status ${status.className}">${escapeHtml(status.label)}</span>`;
   }
+  if (type === "reportStatus") {
+    const status = reportStatusMap[raw] || { label: raw || "未设置", className: "muted" };
+    return `<span class="status ${status.className}">${escapeHtml(status.label)}</span>`;
+  }
+  if (type === "reconcileStatus") {
+    const status = reconcileStatusMap[raw] || { label: raw || "未设置", className: "muted" };
+    return `<span class="status ${status.className}">${escapeHtml(status.label)}</span>`;
+  }
+  if (type === "refundStatus") {
+    const status = refundStatusMap[raw] || { label: raw || "未设置", className: "muted" };
+    return `<span class="status ${status.className}">${escapeHtml(status.label)}</span>`;
+  }
+  if (type === "noticeLevel") {
+    const status = noticeLevelMap[raw] || { label: raw || "未设置", className: "muted" };
+    return `<span class="status ${status.className}">${escapeHtml(status.label)}</span>`;
+  }
+  if (type === "readStatus") return `<span class="status ${raw === "已读" ? "muted" : "pending"}">${escapeHtml(raw || "未读")}</span>`;
+  if (type === "reportType") return codeText(raw, dictionaries.reportType[raw]);
+  if (type === "channelType") return codeText(raw, dictionaries.channelType[raw]);
   if (type === "listType") return `<span class="status info">${escapeHtml(dictionaries.listType[raw] || raw)}</span>`;
   if (type === "subjectType") return `<span class="identity-pill">${escapeHtml(dictionaries.subjectType[raw] || raw)}</span>`;
   if (type === "ledgerType") return `<span class="status info">${escapeHtml(dictionaries.ledgerType[raw] || raw)}</span>`;
@@ -1226,12 +1645,13 @@ function activeModule() {
 
 function render() {
   appState.activeKey = (location.hash || "#/dashboard").replace("#/", "") || "dashboard";
-  if (!moduleCatalog[appState.activeKey]) appState.activeKey = "dashboard";
+  if (!moduleCatalog[appState.activeKey] || !canAccessModule(appState.activeKey)) appState.activeKey = "dashboard";
   const mod = activeModule();
   const domainTitle = mod.domainTitle || mod.subtitle;
   const familyTitle = mod.subtitle && mod.subtitle !== domainTitle ? ` / ${mod.subtitle}` : "";
   document.getElementById("breadcrumb").textContent = `${domainTitle}${familyTitle} / ${mod.title}`;
   document.getElementById("pageTitle").textContent = mod.title;
+  syncTopbarState();
   expandActiveMenuGroup();
   renderMenu();
   renderModule(mod);
@@ -1241,6 +1661,8 @@ function renderMenu() {
   const html = menuGroups.map(group => {
     const collapsed = isMenuGroupCollapsed(group);
     const groupId = group.domainKey || group.title;
+    const visibleItems = group.items.filter(key => moduleCatalog[key] && canAccessModule(key));
+    if (!visibleItems.length) return "";
     return `
     <div class="menu-group ${escapeHtml(group.kind || "")} ${collapsed ? "collapsed" : ""}">
       <button class="menu-group-title" type="button" data-action="toggle-menu-group" data-group="${escapeHtml(groupId)}" aria-expanded="${collapsed ? "false" : "true"}">
@@ -1248,7 +1670,7 @@ function renderMenu() {
         <b class="menu-arrow">${collapsed ? "›" : "⌄"}</b>
       </button>
       <div class="menu-children">
-      ${group.items.map(key => {
+      ${visibleItems.map(key => {
         const mod = moduleCatalog[key];
         if (!mod) return "";
         return `<a class="menu-link ${key === appState.activeKey ? "active" : ""}" href="#/${key}" title="${escapeHtml(group.title)} / ${escapeHtml(mod.title)}" data-short="${escapeHtml(shortMenuLabel(mod.title))}">
@@ -1298,6 +1720,52 @@ function saveCollapsedMenuGroups() {
   }
 }
 
+function loadStoredValue(key, fallback) {
+  try {
+    return localStorage.getItem(key) || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function loadDemoData() {
+  try {
+    return JSON.parse(localStorage.getItem("financeDemoData") || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveDemoData() {
+  try {
+    localStorage.setItem("financeDemoData", JSON.stringify(appState.data));
+  } catch {
+    showToast("当前浏览器限制了本地存储，演示数据不会持久保存");
+  }
+}
+
+function resetDemoData() {
+  try {
+    localStorage.removeItem("financeDemoData");
+  } catch {
+    // localStorage may be unavailable when opened in a restricted preview.
+  }
+  Object.keys(appState.filters).forEach(key => { appState.filters[key] = {}; });
+  initData();
+  render();
+  showToast("已重置为初始 Mock 数据");
+}
+
+function syncTopbarState() {
+  const role = activeRole();
+  const roleSelect = document.getElementById("roleSelect");
+  const timeRangeSelect = document.getElementById("timeRangeSelect");
+  const roleHint = document.getElementById("roleHint");
+  if (roleSelect && roleSelect.value !== appState.roleKey) roleSelect.value = appState.roleKey;
+  if (timeRangeSelect && timeRangeSelect.value !== appState.timeRange) timeRangeSelect.value = appState.timeRange;
+  if (roleHint) roleHint.textContent = `${role.label} · ${role.badge}`;
+}
+
 function menuBadge(mod) {
   if (mod.domainKey === "reference" || mod.subtitle === "研发参考") return "参考";
   if (mod.domainKey === "workbench") return "支撑";
@@ -1310,6 +1778,25 @@ function menuBadge(mod) {
   return "管理";
 }
 
+function activeRole() {
+  return roleProfiles[appState.roleKey] || roleProfiles.director;
+}
+
+function canAccessModule(key) {
+  const role = activeRole();
+  const mod = moduleCatalog[key];
+  if (!mod) return false;
+  if ((role.deniedModules || []).includes(key)) return false;
+  if (role.domains === "all") return true;
+  return (role.domains || []).includes(mod.domainKey);
+}
+
+function roleCanMutate(action) {
+  const role = activeRole();
+  if (role.mutating === "all") return true;
+  return (role.mutating || []).includes(action);
+}
+
 function shortMenuLabel(title) {
   const clean = String(title || "").replace(/总览|台账|明细|演示|中心|管理|配置|历史|模板/g, "");
   return (clean || title || "").slice(0, 2);
@@ -1320,6 +1807,8 @@ function moduleActions(mod) {
 }
 
 function canAction(mod, action) {
+  const mutatingActions = ["add", "edit", "delete", "approve", "reject", "confirmSettle", "rejectSettle", "applyQuota"];
+  if (mutatingActions.includes(action) && !roleCanMutate(action)) return false;
   return Boolean(moduleActions(mod)[action]);
 }
 
@@ -1349,23 +1838,53 @@ function renderModule(mod) {
   const domainTitle = mod.domainTitle || mod.subtitle;
   const kicker = [domainTitle, mod.subtitle && mod.subtitle !== domainTitle ? mod.subtitle : "", mod.table].filter(Boolean).join(" · ");
   document.getElementById("app").innerHTML = `
-    <section class="page-head">
+    <section class="page-head formal-head">
       <div>
         <div class="page-kicker">${escapeHtml(kicker)}</div>
         <h1 class="page-heading">${escapeHtml(mod.title)}</h1>
         <p class="page-desc">${escapeHtml(mod.desc)}</p>
       </div>
       <div class="page-head-actions">
+        <span class="page-type-pill">${escapeHtml(pageTypeName(mod.pageType || "management"))}</span>
         <button class="btn primary" type="button" data-action="help">功能说明</button>
       </div>
     </section>
+    ${renderBusinessOverview(mod)}
     ${renderSummary(mod)}
-    ${renderScenario(mod)}
+    ${renderFormalEnhancement(mod, rows)}
+    ${renderReportBoard(mod, rows)}
+    ${renderDecisionBoard(mod, rows)}
     ${hasFlow ? renderFlow(mod.flow) : ""}
     ${renderQuickActions(mod)}
     ${renderQuery(mod)}
     ${renderTablePanel(mod, rows)}
   `;
+}
+
+function getDomainProfile(mod) {
+  return domainProfiles[mod.domainKey] || domainProfiles[mod.subtitle] || domainProfiles.workbench;
+}
+
+function renderBusinessOverview(mod) {
+  const profile = getDomainProfile(mod);
+  const pageType = pageTypeName(mod.pageType || "management");
+  return `<section class="business-overview">
+    <div class="overview-card primary">
+      <div class="overview-label">管理目标</div>
+      <h2>${escapeHtml(profile.objective)}</h2>
+      <p>${escapeHtml(mod.scenario || mod.desc)}</p>
+    </div>
+    <div class="overview-card">
+      <div class="overview-label">核心口径</div>
+      <p>${escapeHtml(profile.dataScope)}</p>
+      <span class="overview-meta">${escapeHtml(profile.reportTitle)}</span>
+    </div>
+    <div class="overview-card">
+      <div class="overview-label">责任边界</div>
+      <p>${escapeHtml(profile.rule)}</p>
+      <span class="overview-meta">${escapeHtml(profile.owner)} · ${escapeHtml(pageType)}</span>
+    </div>
+  </section>`;
 }
 
 function renderSummary(mod) {
@@ -1379,6 +1898,196 @@ function renderSummary(mod) {
   `).join("")}</section>`;
 }
 
+function renderFormalEnhancement(mod, rows) {
+  if (appState.activeKey === "dashboard") return renderDashboardCharts();
+  if (appState.activeKey === "reportCenter") return renderReportShowcase(rows);
+  if (appState.activeKey === "reportBuilder") return renderReportBuilderPanel();
+  if (appState.activeKey === "notificationCenter") return renderNotificationBoard(rows);
+  if (appState.activeKey === "reconcileCenter") return renderReconcileBoard(rows);
+  if (appState.activeKey === "refundManage") return renderApprovalTimelinePanel("退款状态流", ["申请中", "审核中", "退款处理中", "已退款/已拒绝", "渠道对账"]);
+  if (appState.activeKey === "paymentAccountReport") return renderAccountReportPanel();
+  return "";
+}
+
+function renderDashboardCharts() {
+  const range = currentTimeRange();
+  const factor = range.factor;
+  const income = mockDataCenter.kpi.todayIncome * factor;
+  const expense = mockDataCenter.kpi.todayExpense * factor;
+  const net = income - expense;
+  return `<section class="dashboard-suite">
+    <div class="suite-head">
+      <div>
+        <div class="section-kicker">正式驾驶舱</div>
+        <h2>收支、资金池、月结和风险一屏演示</h2>
+        <p>当前口径：${escapeHtml(range.label)} · 最后更新 ${escapeHtml(mockDataCenter.updatedAt)} · 图表为本地 Mock 计算。</p>
+      </div>
+      <div class="range-tabs">
+        ${timeRangeOptions.map(item => `<button class="${item.key === appState.timeRange ? "active" : ""}" type="button" data-action="set-time-range" data-range="${escapeHtml(item.key)}">${escapeHtml(item.label)}</button>`).join("")}
+      </div>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card large">
+        <div class="chart-title">收支趋势</div>
+        ${renderLineChart(mockDataCenter.trend.map(value => value * factor), mockDataCenter.expenseTrend.map(value => value * factor))}
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">收支分类</div>
+        ${renderCategoryBars(mockDataCenter.categories)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">资金流水瀑布</div>
+        ${renderWaterfallChart([
+          ["期初", income * 0.28],
+          ["收入", income],
+          ["支出", -expense],
+          ["月结", -156000 * Math.min(factor, 1.4)],
+          ["净额", net]
+        ])}
+      </div>
+      <div class="chart-card large">
+        <div class="chart-title">12 个月资金热力图</div>
+        ${renderHeatmap(mockDataCenter.heatmap)}
+      </div>
+      <div class="chart-card warning-card">
+        <div class="chart-title">异常预警</div>
+        <div class="warning-list">
+          ${mockDataCenter.warnings.map(item => `<a href="#/${escapeHtml(item.route)}" class="warning-item ${escapeHtml(item.level)}">
+            <span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.amount)}</strong>
+          </a>`).join("")}
+        </div>
+      </div>
+    </div>
+  </section>`;
+}
+
+function renderLineChart(incomeValues, expenseValues) {
+  const all = [...incomeValues, ...expenseValues];
+  const max = Math.max(...all, 1);
+  const line = (values, color) => {
+    const points = values.map((value, index) => {
+      const x = 18 + index * (264 / Math.max(values.length - 1, 1));
+      const y = 132 - (value / max) * 104;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(" ");
+    return `<polyline fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="${points}" />`;
+  };
+  return `<svg class="native-chart" viewBox="0 0 310 150" role="img" aria-label="收支趋势图">
+    <line x1="18" y1="132" x2="296" y2="132" stroke="#d9e2ec" />
+    <line x1="18" y1="28" x2="18" y2="132" stroke="#d9e2ec" />
+    ${line(incomeValues, "#14804a")}
+    ${line(expenseValues, "#c2413b")}
+    <g class="chart-legend"><text x="28" y="20">收入</text><text x="86" y="20">支出</text></g>
+  </svg>`;
+}
+
+function renderCategoryBars(items) {
+  return `<div class="category-bars">${items.map(item => `<div class="category-row">
+    <span>${escapeHtml(item.label)}</span>
+    <div class="bar-track"><i class="${escapeHtml(item.tone)}" style="width:${item.value}%"></i></div>
+    <strong>${item.value}%</strong>
+  </div>`).join("")}</div>`;
+}
+
+function renderWaterfallChart(items) {
+  const max = Math.max(...items.map(item => Math.abs(item[1])), 1);
+  return `<div class="waterfall">${items.map(item => {
+    const value = item[1];
+    const height = Math.max(16, Math.abs(value) / max * 116);
+    return `<div class="waterfall-item">
+      <div class="waterfall-bar ${value < 0 ? "down" : "up"}" style="height:${height}px"></div>
+      <span>${escapeHtml(item[0])}</span>
+    </div>`;
+  }).join("")}</div>`;
+}
+
+function renderHeatmap(values) {
+  const max = Math.max(...values, 1);
+  return `<div class="heatmap">${values.map((value, index) => {
+    const level = Math.ceil(value / max * 5);
+    return `<span class="heat-${level}" title="第 ${index + 1} 周净流入指数 ${value}"></span>`;
+  }).join("")}</div>`;
+}
+
+function renderReportShowcase(rows) {
+  return `<section class="formal-workspace">
+    <div class="section-heading">
+      <div><div class="section-kicker">报表工作台</div><h2>标准报表、预览和下载演示</h2></div>
+      <button class="btn primary" type="button" data-action="open-report-preview">生成报表演示</button>
+    </div>
+    <div class="report-template-grid">
+      ${rows.map(row => `<article class="report-template">
+        <div class="report-template-type">${escapeHtml(dictionaries.reportType[row.reportType] || row.reportType)}</div>
+        <h3>${escapeHtml(row.reportName)}</h3>
+        <p>${escapeHtml(row.suggestion || "可生成预览和导出演示")}</p>
+        <div class="report-template-footer">
+          ${formatValue(row.reportStatus, "reportStatus")}
+          <button class="link-btn" type="button" data-action="open-report-preview" data-id="${escapeHtml(row.__id)}">预览</button>
+        </div>
+      </article>`).join("")}
+    </div>
+  </section>`;
+}
+
+function renderReportBuilderPanel() {
+  const fields = ["站点", "代理", "交易类型", "资金池来源", "月结状态", "往来账龄", "收入金额", "支出金额", "净额"];
+  return `<section class="builder-panel">
+    <div>
+      <div class="section-kicker">自定义报表构建器</div>
+      <h2>字段选择、筛选、聚合、预览</h2>
+      <p>演示版不拖拽字段，但用勾选块表达真实系统应具备的配置能力。</p>
+    </div>
+    <div class="field-picker">${fields.map((field, index) => `<label><input type="checkbox" ${index < 6 ? "checked" : ""} /> ${escapeHtml(field)}</label>`).join("")}</div>
+    <div class="builder-preview">
+      <div><strong>维度</strong><span>站点 + 代理 + 月份</span></div>
+      <div><strong>聚合</strong><span>收入合计 / 支出合计 / 未结清金额</span></div>
+      <div><strong>格式</strong><span>PDF / XLSX / CSV</span></div>
+    </div>
+  </section>`;
+}
+
+function renderNotificationBoard(rows) {
+  const high = rows.filter(row => row.noticeLevel === "high").length;
+  return `<section class="notification-board">
+    <div class="notification-card danger"><strong>${high}</strong><span>高优先级提醒</span></div>
+    <div class="notification-card warning"><strong>${rows.filter(row => row.readStatus !== "已读").length}</strong><span>未读通知</span></div>
+    <div class="notification-card info"><strong>${currentRoleLabel()}</strong><span>当前角色接收范围</span></div>
+  </section>`;
+}
+
+function renderReconcileBoard(rows) {
+  const diff = rows.reduce((sum, row) => sum + Math.abs(parseMoney(row.diffAmount)), 0);
+  return `<section class="reconcile-board">
+    <div><span>差异金额</span><strong>${toCurrency(diff)}</strong></div>
+    <div><span>自动平账</span><strong>${rows.filter(row => row.reconcileStatus === "matched").length} 批</strong></div>
+    <div><span>处理路径</span><strong>差异 -> 退款/补单 -> 审计</strong></div>
+  </section>`;
+}
+
+function renderAccountReportPanel() {
+  return `<section class="account-report-panel">
+    <div><span>资金池增加来源</span><strong>站点/代理/会员充值 + 总站加额</strong></div>
+    <div><span>资金池减少来源</span><strong>站点/代理/会员提现 + 总站减额 + 月结扣款</strong></div>
+    <div><span>扣款原则</span><strong>资金不足阻断，不允许扣成负数</strong></div>
+  </section>`;
+}
+
+function renderApprovalTimelinePanel(title, steps) {
+  return `<section class="approval-panel">
+    <div class="section-kicker">流程说明</div>
+    <h2>${escapeHtml(title)}</h2>
+    <div class="approval-steps">${steps.map((step, index) => `<div><span>${index + 1}</span><strong>${escapeHtml(step)}</strong></div>`).join("")}</div>
+  </section>`;
+}
+
+function currentTimeRange() {
+  return timeRangeOptions.find(item => item.key === appState.timeRange) || timeRangeOptions[0];
+}
+
+function currentRoleLabel() {
+  return activeRole().label;
+}
+
 function renderScenario(mod) {
   if (!mod.scenario) return "";
   return `<section class="scenario-strip">
@@ -1388,6 +2097,144 @@ function renderScenario(mod) {
     </div>
     <span class="env-pill">演示模式 · 不调用 API</span>
   </section>`;
+}
+
+function renderReportBoard(mod, rows) {
+  const profile = getDomainProfile(mod);
+  const statusItems = buildStatusDistribution(mod, rows);
+  const amountItems = buildAmountSnapshot(mod, rows);
+  const operationItems = buildOperationSignals(mod, rows);
+  return `<section class="report-board">
+    <div class="section-heading">
+      <div>
+        <div class="section-kicker">${escapeHtml(profile.reportTitle)}</div>
+        <h2>运营报表</h2>
+      </div>
+      <span class="badge">${escapeHtml(profile.reportFocus.join(" / "))}</span>
+    </div>
+    <div class="report-grid">
+      ${renderReportCard("状态分布", "按当前筛选结果统计", statusItems)}
+      ${renderReportCard("金额与规模", "用于判断资金影响面", amountItems)}
+      ${renderReportCard("处理优先级", "用于运营下一步动作", operationItems)}
+    </div>
+  </section>`;
+}
+
+function renderReportCard(title, desc, items) {
+  return `<div class="report-card">
+    <div class="report-title">${escapeHtml(title)}</div>
+    <div class="report-desc">${escapeHtml(desc)}</div>
+    <div class="report-list">
+      ${items.map(item => `<div class="report-row">
+        <span>${escapeHtml(item.label)}</span>
+        <strong class="${item.tone || ""}">${escapeHtml(item.value)}</strong>
+      </div>`).join("")}
+    </div>
+  </div>`;
+}
+
+function renderDecisionBoard(mod, rows) {
+  const profile = getDomainProfile(mod);
+  const actions = operationsForModule(mod).filter(item => !["打开功能说明", "导出演示"].includes(item)).slice(0, 5);
+  const risks = buildRiskSignals(mod, rows);
+  return `<section class="decision-board">
+    <div class="decision-column">
+      <div class="section-kicker">运营动线</div>
+      <h2>这个页面应该怎么用</h2>
+      <p>${escapeHtml(mod.scenario || profile.objective)}</p>
+      <div class="decision-tags">${actions.map(action => `<span>${escapeHtml(action)}</span>`).join("")}</div>
+    </div>
+    <div class="decision-column">
+      <div class="section-kicker">排障与复核</div>
+      <h2>重点关注</h2>
+      <ul>${risks.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+    </div>
+    <div class="decision-column">
+      <div class="section-kicker">输出结果</div>
+      <h2>交付给谁</h2>
+      <p>${escapeHtml(profile.owner)} 根据本页报表、明细和详情弹窗完成审核、配置、排障或复核。</p>
+      <p class="muted-text">真实系统接入时，此处应对接后端列表、详情、报表和审计接口。</p>
+    </div>
+  </section>`;
+}
+
+function buildStatusDistribution(mod, rows) {
+  const statusKeys = ["status", "settlementStatus", "ledgerStatus", "poolStatus", "quotaStatus", "reportStatus", "reconcileStatus", "refundStatus", "noticeLevel"];
+  const statusKey = statusKeys.find(key => rows.some(row => row[key] !== undefined));
+  if (!statusKey) return [{ label: "演示记录", value: `${rows.length} 条`, tone: "info" }, { label: "页面类型", value: pageTypeName(mod.pageType || "management"), tone: "" }];
+  const counts = rows.reduce((acc, row) => {
+    const value = row[statusKey] || "未设置";
+    acc[value] = (acc[value] || 0) + 1;
+    return acc;
+  }, {});
+  return Object.entries(counts).slice(0, 4).map(([value, count]) => ({ label: formatPlainValue(value, inferType(statusKey)), value: `${count} 条`, tone: statusTone(value, statusKey) }));
+}
+
+function buildAmountSnapshot(mod, rows) {
+  const amountKeys = ["amount", "balance", "availableAmount", "finalDeductAmount", "outstandingAmount", "loanAmount", "debtAmount", "repaidAmount", "debitAmount", "creditAmount", "changeAmount", "occurredAmount", "incomeAmount", "expenseAmount", "netAmount", "systemAmount", "channelAmount", "diffAmount", "refundAmount", "invoiceAmount"];
+  const found = amountKeys.filter(key => rows.some(row => row[key] !== undefined)).slice(0, 3);
+  if (!found.length) return [{ label: "记录规模", value: `${rows.length} 条`, tone: "info" }, { label: "关联表", value: mod.table, tone: "" }];
+  return found.map(key => {
+    const total = rows.reduce((sum, row) => sum + parseMoney(row[key]), 0);
+    return { label: findField(mod, key).label, value: toCurrency(total), tone: total < 0 ? "danger" : "success" };
+  });
+}
+
+function buildOperationSignals(mod, rows) {
+  const pending = rows.filter(row => ["10", "pending", "pending_confirm", "insufficient", "overdue"].some(value => Object.values(row).includes(value))).length;
+  const failed = rows.filter(row => ["09", "fail", "failed"].some(value => Object.values(row).includes(value))).length;
+  const actions = moduleActions(mod);
+  return [
+    { label: "需处理", value: `${pending} 条`, tone: pending ? "warning" : "success" },
+    { label: "异常失败", value: `${failed} 条`, tone: failed ? "danger" : "success" },
+    { label: "操作模式", value: actions.add || actions.edit ? "可维护" : "只读查看", tone: actions.add || actions.edit ? "info" : "" }
+  ];
+}
+
+function buildRiskSignals(mod, rows) {
+  const profile = getDomainProfile(mod);
+  const risk = [];
+  if (rows.some(row => row.status === "09")) risk.push("存在失败记录，需要查看失败原因和处理记录。");
+  if (rows.some(row => row.settlementStatus === "insufficient")) risk.push("存在资金池不足，月结扣款必须阻断。");
+  if (rows.some(row => row.ledgerStatus === "overdue" || Number(row.overdueDays) > 0)) risk.push("存在逾期往来，需要进入还款计划或核销流程。");
+  if (rows.some(row => row.status === "10" || row.settlementStatus === "pending" || row.quotaStatus === "pending")) risk.push("存在待处理记录，应按责任人和 SLA 排序处理。");
+  if (!risk.length) risk.push(profile.rule);
+  return risk.slice(0, 4);
+}
+
+function formatPlainValue(value, type) {
+  if (type === "status") return statusMap[value]?.label || value || "未设置";
+  if (type === "settlementStatus") return settlementStatusMap[value]?.label || value || "未设置";
+  if (type === "ledgerStatus") return ledgerStatusMap[value]?.label || value || "未设置";
+  if (type === "poolStatus") return poolStatusMap[value]?.label || value || "未设置";
+  if (type === "quotaStatus") return quotaStatusMap[value]?.label || value || "未设置";
+  if (type === "reportStatus") return reportStatusMap[value]?.label || value || "未设置";
+  if (type === "reconcileStatus") return reconcileStatusMap[value]?.label || value || "未设置";
+  if (type === "refundStatus") return refundStatusMap[value]?.label || value || "未设置";
+  if (type === "noticeLevel") return noticeLevelMap[value]?.label || value || "未设置";
+  return String(value || "未设置");
+}
+
+function statusTone(value, key) {
+  const type = inferType(key);
+  const map = type === "settlementStatus" ? settlementStatusMap
+    : type === "ledgerStatus" ? ledgerStatusMap
+    : type === "poolStatus" ? poolStatusMap
+    : type === "quotaStatus" ? quotaStatusMap
+    : type === "reportStatus" ? reportStatusMap
+    : type === "reconcileStatus" ? reconcileStatusMap
+    : type === "refundStatus" ? refundStatusMap
+    : type === "noticeLevel" ? noticeLevelMap
+    : statusMap;
+  const className = map[value]?.className || "";
+  if (className === "fail") return "danger";
+  if (className === "pending") return "warning";
+  if (className === "success") return "success";
+  return "info";
+}
+
+function toCurrency(value) {
+  return `¥${(Number(value) || 0).toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function renderQuickActions(mod) {
@@ -1436,6 +2283,7 @@ function renderQuery(mod) {
 }
 
 function renderTablePanel(mod, rows) {
+  const visibleCols = displayColumns(mod);
   const toolbarButtons = [
     canAction(mod, "add") ? `<button class="btn primary" type="button" data-action="add">新增演示</button>` : "",
     canAction(mod, "export") ? `<button class="btn" type="button" data-action="export">导出演示</button>` : "",
@@ -1454,13 +2302,13 @@ function renderTablePanel(mod, rows) {
     ${renderTable(mod, rows)}
     <div class="pager">
       <span>共 ${rows.length} 条演示数据</span>
-      <span>低频技术字段在详情中查看</span>
+      <span>列表显示 ${visibleCols.length}/${(mod.columns || []).length} 个高频字段，完整字段在详情中查看</span>
     </div>
   </section>`;
 }
 
 function renderTable(mod, rows) {
-  const cols = mod.columns || [];
+  const cols = displayColumns(mod);
   const rowActions = ["detail", "approve", "reject", "confirmSettle", "rejectSettle", "applyQuota", "edit", "delete"].filter(action => canAction(mod, action));
   if (!rows.length) return `<div class="empty">暂无匹配的演示数据</div>`;
   return `<div class="table-wrap"><table>
@@ -1477,6 +2325,26 @@ function renderTable(mod, rows) {
       </tr>`).join("")}
     </tbody>
   </table></div>`;
+}
+
+function displayColumns(mod) {
+  const original = mod.columns || [];
+  if (original.length <= 8) return original;
+  const priority = [
+    "item", "bizType", "module", "siteName", "subjectName", "counterpartyName",
+    "requestId", "cashOrderId", "settlementId", "ledgerId", "adjustId", "flowId", "bookOrderId",
+    "title", "policyName", "bookTitle", "accountId", "userName", "tradeType", "bookCode",
+    "amount", "transAmt", "balance", "availableAmount", "finalDeductAmount", "outstandingAmount",
+    "riskLevel", "handler", "owner", "deadline", "status", "settlementStatus", "ledgerStatus", "poolStatus", "quotaStatus", "suggestion"
+  ];
+  const picked = [];
+  priority.forEach(key => {
+    if (original.includes(key) && !picked.includes(key) && picked.length < 8) picked.push(key);
+  });
+  original.forEach(key => {
+    if (!picked.includes(key) && picked.length < 8) picked.push(key);
+  });
+  return picked;
 }
 
 function findField(mod, key) {
@@ -1497,7 +2365,7 @@ function openDetail(rowId) {
   const mod = activeModule();
   const row = findRow(rowId);
   const groups = buildDetailGroups(mod, row);
-  const body = Object.entries(groups).map(([title, items]) => {
+  const body = renderDetailHero(mod, row) + Object.entries(groups).map(([title, items]) => {
     if (!items.length) return "";
     return `<section class="detail-section"><h3>${escapeHtml(title)}</h3><div class="detail-grid">
       ${items.map(field => `<div class="detail-item"><div class="detail-label">${escapeHtml(field.label)}</div><div class="detail-value">${formatValue(row[field.key], field.type)}</div></div>`).join("")}
@@ -1508,6 +2376,53 @@ function openDetail(rowId) {
     <div class="detail-item"><div class="detail-label">关联表</div><div class="detail-value">${escapeHtml(mod.table)}</div></div>
   </div></section>`;
   openModal(`${mod.title}详情`, body, `<button class="btn primary" type="button" data-action="close-modal">关闭</button>`);
+}
+
+function renderDetailHero(mod, row) {
+  const primary = detailPrimary(mod, row);
+  const status = detailStatus(row);
+  const amount = detailAmount(mod, row);
+  const owner = row.owner || row.handler || row.principal || getDomainProfile(mod).owner;
+  const conclusion = detailConclusion(mod, row);
+  return `<section class="detail-hero">
+    <div>
+      <div class="detail-hero-label">${escapeHtml(mod.domainTitle || mod.subtitle)} · ${escapeHtml(mod.title)}</div>
+      <h3>${escapeHtml(primary)}</h3>
+      <p>${escapeHtml(conclusion)}</p>
+    </div>
+    <div class="detail-hero-side">
+      <div class="detail-chip">${status ? formatValue(status.value, status.type) : escapeHtml(pageTypeName(mod.pageType || "management"))}</div>
+      <div class="detail-amount">${escapeHtml(amount.label)}<strong>${escapeHtml(amount.value)}</strong></div>
+      <div class="detail-owner">责任人：${escapeHtml(owner)}</div>
+    </div>
+  </section>`;
+}
+
+function detailPrimary(mod, row) {
+  const keys = ["item", "requestId", "cashOrderId", "settlementId", "ledgerId", "adjustId", "flowId", "bookOrderId", "bookTitle", "title", "policyName", "siteName", "accountId"];
+  const key = keys.find(item => row[item]);
+  return key ? `${findField(mod, key).label}：${row[key]}` : `${mod.title}记录`;
+}
+
+function detailStatus(row) {
+  const key = ["status", "settlementStatus", "ledgerStatus", "poolStatus", "quotaStatus", "reportStatus", "reconcileStatus", "refundStatus", "noticeLevel"].find(item => row[item] !== undefined);
+  return key ? { value: row[key], type: inferType(key) } : null;
+}
+
+function detailAmount(mod, row) {
+  const key = ["amount", "transAmt", "balance", "availableAmount", "finalDeductAmount", "outstandingAmount", "loanAmount", "debtAmount", "changeAmount", "debitAmount", "creditAmount"].find(item => row[item] !== undefined);
+  if (!key) return { label: "记录规模", value: "单条详情" };
+  return { label: findField(mod, key).label, value: toCurrency(parseMoney(row[key])) };
+}
+
+function detailConclusion(mod, row) {
+  if (row.suggestion) return row.suggestion;
+  if (row.processRecord) return row.processRecord;
+  if (row.fail) return `失败原因：${row.fail}`;
+  if (row.settlementStatus === "insufficient") return "资金池不足，月结扣款应阻断并进入异常预警。";
+  if (row.ledgerStatus === "overdue") return "台账已逾期，需要进入还款计划或核销跟进。";
+  if (row.status === "10") return "当前记录待处理，需要负责人复核后流转。";
+  return getDomainProfile(mod).rule;
 }
 
 function buildDetailGroups(mod, row) {
@@ -1548,6 +2463,7 @@ function saveForm(rowId) {
     appState.data[key].unshift({ __id: `${key}-${Date.now()}`, ...values });
     showToast("已新增演示数据");
   }
+  saveDemoData();
   closeModal();
   render();
 }
@@ -1628,19 +2544,20 @@ function openApproval(rowId, result) {
   const action = result === "approve" ? "approve" : "reject";
   const row = findRow(rowId);
   if (!canAction(mod, action) || row.status !== "10") {
-    showToast("只有待处理的存款/取款申请可以审核");
+    showToast("只有待处理的申请可以审核");
     return;
   }
   const isApprove = result === "approve";
-  const tradeName = dictionaries.tradeType[row.tradeType] || row.tradeType || "交易";
+  const tradeName = approvalSubject(row);
+  const recordId = approvalRecordId(row);
   const body = `
     <section class="detail-section">
       <h3>${isApprove ? "确认审核通过" : "确认审核驳回"}</h3>
       <div class="detail-grid">
-        <div class="detail-item"><div class="detail-label">申请 ID</div><div class="detail-value">${escapeHtml(row.requestId)}</div></div>
-        <div class="detail-item"><div class="detail-label">交易类型</div><div class="detail-value">${escapeHtml(tradeName)}</div></div>
-        <div class="detail-item"><div class="detail-label">用户</div><div class="detail-value">${escapeHtml(row.userName || row.userId)}</div></div>
-        <div class="detail-item"><div class="detail-label">金额</div><div class="detail-value">${formatValue(row.amount, "money")}</div></div>
+        <div class="detail-item"><div class="detail-label">申请单号</div><div class="detail-value">${escapeHtml(recordId)}</div></div>
+        <div class="detail-item"><div class="detail-label">业务类型</div><div class="detail-value">${escapeHtml(tradeName)}</div></div>
+        <div class="detail-item"><div class="detail-label">主体</div><div class="detail-value">${escapeHtml(row.userName || row.applicant || row.userId || row.customerName || "演示主体")}</div></div>
+        <div class="detail-item"><div class="detail-label">金额</div><div class="detail-value">${formatValue(row.amount || row.refundAmount || row.expenseAmount, "money")}</div></div>
       </div>
     </section>
     <div class="field">
@@ -1660,16 +2577,30 @@ function confirmApproval(rowId, result) {
     showToast("驳回申请需要填写原因");
     return;
   }
-  const tradeName = dictionaries.tradeType[row.tradeType] || row.tradeType || "交易";
+  const tradeName = approvalSubject(row);
   row.status = isApprove ? "01" : "09";
   row.handler = isApprove ? "财务审核（已通过）" : "财务审核（已驳回）";
   row.approvalResult = isApprove ? "通过" : "驳回";
   row.approvalTime = formatDateTime(new Date());
   row.approvalRemark = remark || `${tradeName}审核通过，等待生成收银流水`;
   row.remark = isApprove ? `${tradeName}审核通过，待流转收银流水` : `${tradeName}审核驳回：${remark}`;
+  if (appState.activeKey === "refundManage") {
+    row.refundStatus = isApprove ? "processing" : "rejected";
+    row.suggestion = isApprove ? "退款审核通过，等待通道处理" : `退款已拒绝：${remark}`;
+  }
+  saveDemoData();
   closeModal();
   render();
   showToast(`${tradeName}申请已${isApprove ? "审核通过" : "驳回"}`);
+}
+
+function approvalSubject(row) {
+  if (row.refundId) return "退款";
+  return dictionaries.tradeType[row.tradeType] || row.tradeType || "交易";
+}
+
+function approvalRecordId(row) {
+  return row.requestId || row.refundId || row.__id || "演示申请";
 }
 
 function openSettlementConfirm(rowId) {
@@ -1718,6 +2649,7 @@ function confirmSettlement(rowId) {
   if (after < 0) {
     row.settlementStatus = "insufficient";
     row.suggestion = `资金池不足，缺口 ${toMoney(Math.abs(after))} 元，已阻断扣款`;
+    saveDemoData();
     closeModal();
     render();
     showToast("资金池不足，已阻断月结扣款");
@@ -1744,6 +2676,7 @@ function confirmSettlement(rowId) {
     settlementId: row.settlementId,
     remark
   });
+  saveDemoData();
   closeModal();
   render();
   showToast("月结扣款已完成");
@@ -1782,6 +2715,7 @@ function confirmSettlementReturn(rowId) {
   row.approvalTime = formatDateTime(new Date());
   row.approvalRemark = reason;
   row.suggestion = `已退回调整：${reason}`;
+  saveDemoData();
   closeModal();
   render();
   showToast("月结账单已退回调整");
@@ -1846,6 +2780,7 @@ function confirmQuota(rowId) {
     settlementId: "",
     remark
   });
+  saveDemoData();
   closeModal();
   render();
   showToast("额度调整已生效");
@@ -1899,6 +2834,7 @@ function formatDateTime(date) {
 
 function confirmDelete(rowId) {
   appState.data[appState.activeKey] = appState.data[appState.activeKey].filter(row => row.__id !== rowId);
+  saveDemoData();
   closeModal();
   showToast("已删除演示数据");
   render();
@@ -1937,15 +2873,82 @@ function showToast(message) {
   showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 1800);
 }
 
+function openReportPreview(rowId = "") {
+  const mod = activeModule();
+  const row = rowId ? findRow(rowId) : (appState.data.reportCenter || [])[0] || {};
+  const title = row.reportName || mod.title || "财务报表";
+  const body = `<section class="print-preview">
+    <div class="print-head">
+      <div>
+        <div class="section-kicker">打印 / PDF 预览</div>
+        <h2>${escapeHtml(title)}</h2>
+        <p>演示口径：${escapeHtml(row.period || currentTimeRange().label)} · 生成时间：${escapeHtml(row.generatedTime || formatDateTime(new Date()))}</p>
+      </div>
+      <span class="status success">演示预览</span>
+    </div>
+    <div class="print-kpis">
+      <div><span>收入金额</span><strong>${formatValue(row.incomeAmount || mockDataCenter.kpi.todayIncome, "money")}</strong></div>
+      <div><span>支出金额</span><strong>${formatValue(row.expenseAmount || mockDataCenter.kpi.todayExpense, "money")}</strong></div>
+      <div><span>净额</span><strong>${formatValue(row.netAmount || mockDataCenter.kpi.todayIncome - mockDataCenter.kpi.todayExpense, "money")}</strong></div>
+    </div>
+    ${renderLineChart(mockDataCenter.trend, mockDataCenter.expenseTrend)}
+    <p class="muted-text">真实系统应由后端生成快照、PDF/XLSX 文件和导出记录；当前只做静态预览演示。</p>
+  </section>`;
+  openModal("报表预览", body, `<button class="btn" type="button" data-action="close-modal">关闭</button><button class="btn primary" type="button" data-action="export">下载演示</button>`);
+}
+
 function handleGlobalSearch() {
   const value = document.getElementById("globalSearch").value.trim().toLowerCase();
   if (!value) return;
-  const found = Object.entries(moduleCatalog).find(([, mod]) => `${mod.domainTitle || ""} ${mod.subtitle || ""} ${mod.title} ${mod.desc} ${mod.table}`.toLowerCase().includes(value));
-  if (found) {
-    location.hash = `#/${found[0]}`;
+  const found = Object.entries(moduleCatalog).filter(([key, mod]) => canAccessModule(key) && `${mod.domainTitle || ""} ${mod.subtitle || ""} ${mod.title} ${mod.desc} ${mod.table}`.toLowerCase().includes(value));
+  if (found.length) {
+    if (found.length === 1) {
+      location.hash = `#/${found[0][0]}`;
+      renderSearchDropdown([], "");
+    } else {
+      renderSearchDropdown(found.slice(0, 8), value);
+    }
   } else {
     showToast("未找到匹配模块");
   }
+}
+
+function updateSearchDropdown() {
+  const input = document.getElementById("globalSearch");
+  if (!input) return;
+  const value = input.value.trim().toLowerCase();
+  if (!value) {
+    renderSearchDropdown([], "");
+    return;
+  }
+  const found = Object.entries(moduleCatalog)
+    .filter(([key, mod]) => canAccessModule(key) && `${mod.domainTitle || ""} ${mod.subtitle || ""} ${mod.title} ${mod.desc} ${mod.table}`.toLowerCase().includes(value))
+    .slice(0, 8);
+  renderSearchDropdown(found, value);
+}
+
+function renderSearchDropdown(items, keyword) {
+  const box = document.getElementById("searchDropdown");
+  if (!box) return;
+  if (!items.length) {
+    box.classList.remove("open");
+    box.innerHTML = "";
+    return;
+  }
+  box.innerHTML = items.map(([key, mod]) => `<button type="button" data-action="search-result" data-key="${escapeHtml(key)}">
+    <strong>${highlightText(mod.title, keyword)}</strong>
+    <span>${escapeHtml(mod.domainTitle || mod.subtitle)} · ${escapeHtml(mod.table || mod.route)}</span>
+  </button>`).join("");
+  box.classList.add("open");
+}
+
+function highlightText(text, keyword) {
+  const safeText = escapeHtml(text);
+  if (!keyword) return safeText;
+  const lower = String(text).toLowerCase();
+  const index = lower.indexOf(keyword);
+  if (index < 0) return safeText;
+  return `${escapeHtml(String(text).slice(0, index))}<mark>${escapeHtml(String(text).slice(index, index + keyword.length))}</mark>${escapeHtml(String(text).slice(index + keyword.length))}`;
 }
 
 document.addEventListener("click", event => {
@@ -1955,6 +2958,17 @@ document.addEventListener("click", event => {
   const rowId = target.dataset.id || "";
   if (action === "toggle-menu-group") {
     toggleMenuGroup(target.dataset.group || "");
+    return;
+  }
+  if (action === "set-time-range") {
+    appState.timeRange = target.dataset.range || "today";
+    try { localStorage.setItem("financeDemoTimeRange", appState.timeRange); } catch {}
+    render();
+    return;
+  }
+  if (action === "search-result") {
+    location.hash = `#/${target.dataset.key}`;
+    renderSearchDropdown([], "");
     return;
   }
   if (action === "help") openHelp();
@@ -1976,6 +2990,10 @@ document.addEventListener("click", event => {
   if (action === "confirm-quota") confirmQuota(rowId);
   if (action === "confirm-delete") confirmDelete(rowId);
   if (action === "save-form") saveForm(rowId);
+  if (action === "open-report-preview") openReportPreview(rowId);
+  if (action === "reset-demo-data") resetDemoData();
+  if (action === "open-notification") location.hash = "#/notificationCenter";
+  if (action === "open-demo-guide") openHelp();
   if (action === "export") {
     if (canAction(activeModule(), "export")) showToast("导出演示：真实项目应调用后端 Excel 导出接口");
     else showToast("当前页面不支持导出");
@@ -1987,6 +3005,25 @@ document.addEventListener("click", event => {
 document.addEventListener("keydown", event => {
   if (event.key === "Enter" && event.target.id === "globalSearch") handleGlobalSearch();
   if (event.key === "Escape") closeModal();
+});
+
+document.addEventListener("input", event => {
+  if (event.target.id === "globalSearch") updateSearchDropdown();
+});
+
+document.addEventListener("change", event => {
+  if (event.target.id === "roleSelect") {
+    appState.roleKey = event.target.value || "director";
+    try { localStorage.setItem("financeDemoRole", appState.roleKey); } catch {}
+    if (!canAccessModule(appState.activeKey)) location.hash = "#/dashboard";
+    render();
+    showToast(`已切换为${activeRole().label}`);
+  }
+  if (event.target.id === "timeRangeSelect") {
+    appState.timeRange = event.target.value || "today";
+    try { localStorage.setItem("financeDemoTimeRange", appState.timeRange); } catch {}
+    render();
+  }
 });
 
 document.getElementById("modalClose").addEventListener("click", closeModal);

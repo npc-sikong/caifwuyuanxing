@@ -30,9 +30,34 @@
           <div class="global-search">
             <input id="globalSearch" type="search" placeholder="搜索模块、表名或场景" />
             <button class="btn" type="button" data-action="global-search">搜索</button>
+            <div class="search-dropdown" id="searchDropdown"></div>
           </div>
           <div class="topbar-actions">
-            <span class="env-pill role">当前角色：财务运营总监</span>
+            <label class="topbar-control">
+              <span>角色</span>
+              <select id="roleSelect">
+                <option value="director">财务运营总监</option>
+                <option value="clerk">财务专员</option>
+                <option value="auditor">财务审核员</option>
+                <option value="siteAdmin">站点管理员</option>
+                <option value="observer">只读观察者</option>
+              </select>
+            </label>
+            <label class="topbar-control">
+              <span>时间</span>
+              <select id="timeRangeSelect">
+                <option value="today">今日</option>
+                <option value="yesterday">昨日</option>
+                <option value="week">本周</option>
+                <option value="month">本月</option>
+                <option value="lastMonth">上月</option>
+                <option value="quarter">近三月</option>
+                <option value="custom">自定义</option>
+              </select>
+            </label>
+            <button class="btn" type="button" data-action="open-notification">通知</button>
+            <button class="btn" type="button" data-action="reset-demo-data">重置数据</button>
+            <span class="env-pill role" id="roleHint">财务运营总监 · 全局可见</span>
             <span class="env-pill">无真实 API</span>
             <span class="env-pill muted">Mock 数据</span>
           </div>
