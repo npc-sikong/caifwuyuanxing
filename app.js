@@ -128,7 +128,7 @@ const roleProfiles = {
   },
   observer: {
     label: "只读观察者",
-    badge: "只读演示",
+    badge: "只读",
     domains: "all",
     deniedModules: [],
     mutating: [],
@@ -173,7 +173,7 @@ const quickActions = {
   ],
   account: [
     { label: "查看余额明细", target: "balance" },
-    { label: "账户开通演示", target: "accountRegister" }
+    { label: "账户开通", target: "accountRegister" }
   ],
   book: [
     { label: "查看记账凭证", target: "bookOrder" },
@@ -336,7 +336,7 @@ const moduleCatalog = {
     route: "/finance/demo/todo",
     permission: "demo:finance:todo",
     scenario: "财务运营每天按优先级处理待办，先高风险、再超时、最后普通配置补齐。",
-    summary: [metric("待审核", "24", "收银申请", "warning"), metric("待排障", "7", "失败流水/队列", "danger"), metric("待扣月结", "3", "总站账单", "warning"), metric("待确认借款", "5", "站点/代理", "warning"), metric("待核销", "3", "还款记录", "info"), metric("今日已处理", "96", "模拟数据", "success")],
+    summary: [metric("待审核", "24", "收银申请", "warning"), metric("待排障", "7", "失败流水/队列", "danger"), metric("待扣月结", "3", "总站账单", "warning"), metric("待确认借款", "5", "站点/代理", "warning"), metric("待核销", "3", "还款记录", "info"), metric("今日已处理", "96", "处理记录", "success")],
     quickActions: [quick("收银申请", "cashRequest"), quick("月结账单", "monthlySettlement", "danger"), quick("站点资金池", "siteFundPool"), quick("代理欠款", "agentDebtLedger", "danger"), quick("还款核销", "repaymentLedger"), quick("收银策略", "cashPolicy"), quick("记账策略", "bookPolicy")],
     columns: ["item", "bizType", "level", "handler", "deadline", "status"],
     filters: ["item", "bizType", "level", "status"],
@@ -360,7 +360,7 @@ const moduleCatalog = {
     route: "/finance/demo/exception",
     permission: "demo:finance:exception",
     scenario: "财务运营和研发值班共同使用，按异常类型定位影响模块和下一步处理动作。",
-    summary: [metric("高风险", "9", "优先处理", "danger"), metric("处理中", "5", "已有负责人", "info"), metric("今日新增", "14", "模拟告警", "warning"), metric("资金池不足", "1", "月结阻断", "danger"), metric("往来逾期", "3", "代理欠款", "danger"), metric("已关闭", "32", "今日处理", "success")],
+    summary: [metric("高风险", "9", "优先处理", "danger"), metric("处理中", "5", "已有负责人", "info"), metric("今日新增", "14", "新增告警", "warning"), metric("资金池不足", "1", "月结阻断", "danger"), metric("往来逾期", "3", "代理欠款", "danger"), metric("已关闭", "32", "今日处理", "success")],
     quickActions: [quick("代码风险", "riskReport"), quick("月结账单", "monthlySettlement", "danger"), quick("站点资金池", "siteFundPool"), quick("试算平衡", "trialBalance"), quick("风控命中", "riskHit"), quick("代理欠款", "agentDebtLedger", "danger")],
     columns: ["item", "module", "riskLevel", "owner", "handlerStatus", "sla", "status", "suggestion"],
     filters: ["item", "module", "riskLevel", "handlerStatus", "status"],
@@ -417,7 +417,7 @@ const moduleCatalog = {
     route: "/finance/demo/accountOverview",
     permission: "demo:finance:accountOverview",
     scenario: "财务运营先看账户总览判断资金结构，再下钻余额明细。",
-    summary: [metric("总余额", "¥1,181,888.00", "模拟汇总", "success"), metric("站点资金池", "¥304,000.00", "可提现金额", "success"), metric("账户数量", "386", "商户/代理/私有", "info"), metric("负余额账户", "2", "需复核", "danger"), metric("今日变动", "¥62,000.00", "借贷发生额", "warning"), metric("代理往来未结清", "¥188,000.00", "不含会员", "danger")],
+    summary: [metric("总余额", "¥1,181,888.00", "余额汇总", "success"), metric("站点资金池", "¥304,000.00", "可提现金额", "success"), metric("账户数量", "386", "商户/代理/私有", "info"), metric("负余额账户", "2", "需复核", "danger"), metric("今日变动", "¥62,000.00", "借贷发生额", "warning"), metric("代理往来未结清", "¥188,000.00", "不含会员", "danger")],
     quickActions: [...quickActions.account, quick("站点资金池", "siteFundPool"), quick("月结账单", "monthlySettlement", "danger"), quick("往来总览", "ledgerOverview"), quick("站点身份", "siteIdentity")],
     columns: ["accountObject", "accountType", "accountCount", "balance", "occurredAmount", "status"],
     filters: ["accountObject", "accountType", "status"],
@@ -432,7 +432,7 @@ const moduleCatalog = {
   balance: tableModule("余额明细", "资金账户", "查询账户余额明细，保留账套、账户类型、账户对象、记账主体等完整字段。", "fin_balance", "/finance/balance", "finance:balance", ["accountId", "accountType", "accountObject", "userName", "processId", "balance", "occurredAmount", "status"], ["accountId", "accountType", "accountObject", "processId"], [
     row({ accountId: "1", accountType: "10", accountObject: "40", userName: "系统现金", processId: "100210", balance: "860000.00", openBalance: "820000.00", occurredAmount: "40000.00", direction: "10", closeOrder: "BOOK202605220001", status: "00" }),
     row({ accountId: "site:100100100", accountType: "30", accountObject: "20", userName: "华东代理", processId: "site:100100100", balance: "320000.00", openBalance: "300000.00", occurredAmount: "20000.00", direction: "10", closeOrder: "BOOK202605220002", status: "00" }),
-    row({ accountId: "1142889689825594113", accountType: "10", accountObject: "80", userName: "演示用户", processId: "1142889689825594113", balance: "1888.00", openBalance: "2888.00", occurredAmount: "-1000.00", direction: "20", closeOrder: "BOOK202605220003", status: "10" })
+    row({ accountId: "1142889689825594113", accountType: "10", accountObject: "80", userName: "会员A", processId: "1142889689825594113", balance: "1888.00", openBalance: "2888.00", occurredAmount: "-1000.00", direction: "20", closeOrder: "BOOK202605220003", status: "10" })
   ], "余额明细用于排查账户维度的真实余额，建议生产环境限制直接修改。"),
   accountRegister: operationalModule({
     title: "账户开通",
@@ -443,13 +443,13 @@ const moduleCatalog = {
     route: "/finance/demo/accountRegister",
     permission: "demo:finance:accountRegister",
     scenario: "新商户或代理接入时，运营确认对象类型和账套后开通财务账户。",
-    summary: [metric("今日开通", "18", "商户 15 / 代理 3", "success"), metric("待补配置", "2", "账户对象未配置", "warning"), metric("重复开通拦截", "4", "模拟数据", "info")],
+    summary: [metric("今日开通", "18", "商户 15 / 代理 3", "success"), metric("待补配置", "2", "账户对象未配置", "warning"), metric("重复开通拦截", "4", "拦截记录", "info")],
     quickActions: [quick("账户对象配置", "objectAccount"), quick("余额明细", "balance")],
     columns: ["objectType", "objectId", "objectName", "siteId", "resultAccount", "status"],
     filters: ["objectType", "objectId", "status"],
     fields: commonFields(["objectType", "objectId", "objectName", "siteId", "resultAccount", "status", "suggestion"]),
     rows: [
-      row({ objectType: "商户", objectId: "1142889689825594113", objectName: "演示商户", siteId: "site:100100100", resultAccount: "余额/积分", status: "00", suggestion: "按 fin_object_account 创建账户" }),
+      row({ objectType: "商户", objectId: "1142889689825594113", objectName: "华东商户", siteId: "site:100100100", resultAccount: "余额/积分", status: "00", suggestion: "按 fin_object_account 创建账户" }),
       row({ objectType: "代理", objectId: "100100100", objectName: "华东代理", siteId: "site:100100100", resultAccount: "资金池", status: "00", suggestion: "按代理账户对象创建资金池" }),
       row({ objectType: "私有", objectId: "100210", objectName: "系统现金", siteId: "1", resultAccount: "余额", status: "10", suggestion: "按 fin_private_account 创建系统账户" })
     ],
@@ -503,7 +503,7 @@ const moduleCatalog = {
     route: "/finance/demo/ledger/site",
     permission: "demo:finance:ledger:site",
     scenario: "站点财务在创建借款前确认站点身份、额度和代理覆盖范围。",
-    summary: [metric("站点数量", "2", "演示站点", "info"), metric("可借出额度", "¥500,000.00", "模拟额度", "success"), metric("关联代理", "18", "不含会员", "warning"), metric("风险站点", "1", "存在逾期", "danger")],
+    summary: [metric("站点数量", "2", "已配置站点", "info"), metric("可借出额度", "¥500,000.00", "额度池", "success"), metric("关联代理", "18", "不含会员", "warning"), metric("风险站点", "1", "存在逾期", "danger")],
     quickActions: [quick("站点借款", "siteLoanLedger"), quick("往来总览", "ledgerOverview")],
     columns: ["siteId", "siteName", "siteLevel", "principal", "agentCount", "availableCredit", "outstandingAmount", "ledgerStatus"],
     filters: ["siteId", "siteName", "principal", "ledgerStatus"],
@@ -623,7 +623,7 @@ const moduleCatalog = {
     route: "/finance/demo/trialBalance",
     permission: "demo:finance:trialBalance",
     scenario: "财务运营新增或调整记账模板后，先用试算平衡确认凭证是否能落账。",
-    summary: [metric("待检查批次", "6", "余额未更新", "warning"), metric("不平衡批次", "2", "需修复模板", "danger"), metric("今日通过", "118", "模拟数据", "success")],
+    summary: [metric("待检查批次", "6", "余额未更新", "warning"), metric("不平衡批次", "2", "需修复模板", "danger"), metric("今日通过", "118", "通过批次", "success")],
     quickActions: [quick("记账模板", "bookTemplate"), quick("记账凭证", "bookOrder")],
     columns: ["batchId", "bookCode", "debitAmount", "creditAmount", "diffAmount", "status", "suggestion"],
     filters: ["batchId", "bookCode", "status"],
@@ -642,9 +642,9 @@ const moduleCatalog = {
     row({ title: "代理资金池校验", riskBean: "CheckAgentPoolBalance", bookCode: "K0700", operators: ">=", value: "amount", sort: "30", status: "10" })
   ], "风控规则影响交易是否能继续进入收银和记账。"),
   blackList: tableModule("黑/红名单", "风控合规", "按用户、手机号和记账码配置交易准入规则。", "fin_black_list", "/finance/list", "finance:list", ["title", "userId", "userMobile", "bookCode", "type", "status", "remark"], ["title", "userId", "bookCode", "type", "status"], [
-    row({ title: "提现黑名单", userId: "1142889689825594113", userMobile: "13800000000", bookCode: "K0700", type: "10", status: "00", remark: "演示拒绝提现" }),
+    row({ title: "提现黑名单", userId: "1142889689825594113", userMobile: "13800000000", bookCode: "K0700", type: "10", status: "00", remark: "拒绝提现" }),
     row({ title: "全交易黑名单", userId: "1142889689825594000", userMobile: "13900000000", bookCode: "*", type: "10", status: "00", remark: "PRD 提到支持 *，代码待确认" }),
-    row({ title: "充值红名单", userId: "1142889689825594222", userMobile: "13700000000", bookCode: "K0100", type: "20", status: "10", remark: "演示预留规则" })
+    row({ title: "充值红名单", userId: "1142889689825594222", userMobile: "13700000000", bookCode: "K0100", type: "20", status: "10", remark: "预留规则" })
   ], "真实开发需确认 type 与 book_code=* 的匹配规则。"),
   riskHit: operationalModule({
     title: "风险命中",
@@ -675,7 +675,7 @@ const moduleCatalog = {
     route: "/finance/demo/auditLog",
     permission: "demo:finance:auditLog",
     scenario: "合规或管理人员查看谁在何时修改了关键配置。",
-    summary: [metric("今日操作", "42", "配置/审核/处理", "info"), metric("敏感操作", "8", "模板和名单", "warning"), metric("失败登录", "0", "演示数据", "success")],
+    summary: [metric("今日操作", "42", "配置/审核/处理", "info"), metric("敏感操作", "8", "模板和名单", "warning"), metric("失败登录", "0", "今日统计", "success")],
     quickActions: [quick("黑/红名单", "blackList"), quick("收银策略", "cashPolicy"), quick("记账策略", "bookPolicy")],
     columns: ["operator", "action", "module", "target", "operateTime", "status"],
     filters: ["operator", "module", "action", "status"],
@@ -771,7 +771,7 @@ function applyFormalDemoEnhancements() {
     metric("本月收入", toCurrency(mockDataCenter.kpi.monthIncome), "充值与调整", "success"),
     metric("本月支出", toCurrency(mockDataCenter.kpi.monthExpense), "提现与扣款", "warning"),
     metric("账户余额", toCurrency(mockDataCenter.kpi.accountBalance), "客户余额汇总", "info"),
-    metric("资金周转天数", `${mockDataCenter.kpi.turnoverDays} 天`, "模拟指标", "info")
+    metric("资金周转天数", `${mockDataCenter.kpi.turnoverDays} 天`, "周转指标", "info")
   ];
   moduleCatalog.dashboard.quickActions = [
     quick("待办中心", "todoCenter", "danger"),
@@ -826,9 +826,9 @@ function tableModule(title, subtitle, desc, table, route, permission, columns, f
     permission,
     scenario: note,
     summary: [
-      metric("演示数据", String(rows.length), "本地 Mock", "info"),
+      metric("数据量", String(rows.length), "当前列表", "info"),
       metric("关联表", table, "详情可查看字段", "success"),
-      metric("操作能力", "查/增/改/删/导", "仅演示", "warning")
+      metric("操作能力", "查/增/改/删/导", "按权限控制", "warning")
     ],
     quickActions: [quick("查看功能说明", "__help")],
     columns,
@@ -867,7 +867,7 @@ function paymentAccountHomeModule() {
       row({ item: "私有账户", bizType: "系统出入款账户", owner: "财务配置", status: "00", suggestion: "维护系统现金、银行存款、收入和成本账户", route: "#/privateAccount", permission: "finance:privateAccount", tableName: "fin_private_account" }),
       row({ item: "站点资金池", bizType: "站点可提现金额", owner: "总站财务", status: "10", suggestion: "查看站点可用、冻结和不足状态", route: "#/siteFundPool", permission: "demo:finance:fundPool:site", tableName: "fund_pool_demo" }),
       row({ item: "月结账单", bizType: "总站月结扣款", owner: "总站财务", status: "10", suggestion: "资金池充足才允许确认扣款", route: "#/monthlySettlement", permission: "demo:finance:settlement:monthly", tableName: "monthly_settlement_demo" }),
-      row({ item: "额度调整", bizType: "总站增减额度", owner: "总站财务", status: "10", suggestion: "确认后只更新演示资金池和流水", route: "#/quotaAdjust", permission: "demo:finance:fundPool:quota", tableName: "fund_pool_quota_adjust_demo" })
+      row({ item: "额度调整", bizType: "总站增减额度", owner: "总站财务", status: "10", suggestion: "确认后更新资金池和流水", route: "#/quotaAdjust", permission: "demo:finance:fundPool:quota", tableName: "fund_pool_quota_adjust_demo" })
     ],
     flow: [
       ["查看资金池", "确认单站点可提现金额和冻结金额。", "siteFundPool"],
@@ -900,7 +900,7 @@ function cashFlowHomeModule() {
     filters: ["item", "bizType", "status"],
     fields: commonFields(["item", "bizType", "owner", "status", "suggestion", "route", "permission", "tableName"]),
     rows: [
-      row({ item: "收银申请", bizType: "存款/取款审核", owner: "财务审核", status: "10", suggestion: "保留通过/驳回确认弹窗，审核后进入本地 Mock 状态流转", route: "#/cashRequest", permission: "finance:request", tableName: "fin_cash_request" }),
+      row({ item: "收银申请", bizType: "存款/取款审核", owner: "财务审核", status: "10", suggestion: "支持通过/驳回确认，审核后进入状态流转", route: "#/cashRequest", permission: "finance:request", tableName: "fin_cash_request" }),
       row({ item: "收银流水", bizType: "交易主流水", owner: "财务运营", status: "00", suggestion: "重点查看交易类型、记账码、金额和失败原因", route: "#/cashOrder", permission: "finance:cashOrder", tableName: "fin_cash_order" }),
       row({ item: "收银策略", bizType: "处理链配置", owner: "系统管理员", status: "10", suggestion: "独立权限维护，不和记账策略合并编辑", route: "#/cashPolicy", permission: "finance:cashPolicy", tableName: "fin_cash_policy" }),
       row({ item: "交易字典", bizType: "交易类型映射", owner: "系统管理员", status: "00", suggestion: "维护 trade_type 到 book_code 的映射，影响收银转记账", route: "#/master", permission: "finance:master", tableName: "comm_code_master" }),
@@ -930,7 +930,7 @@ function bookTemplateHomeModule() {
       metric("启用模板", "4", "充值/提现", "success"),
       metric("待复核策略", "2", "高影响配置", "warning"),
       metric("不平衡批次", "2", "需修复模板", "danger"),
-      metric("今日凭证", "118", "模拟数据", "info")
+      metric("今日凭证", "118", "凭证记录", "info")
     ],
     quickActions: [quick("记账模板", "bookTemplate", "danger"), quick("记账策略", "bookPolicy"), quick("记账凭证", "bookOrder"), quick("试算平衡", "trialBalance", "danger"), quick("记账分类", "category")],
     columns: ["item", "bizType", "owner", "status", "suggestion", "route"],
@@ -974,7 +974,7 @@ function customerBalanceHomeModule() {
     fields: commonFields(["item", "bizType", "owner", "status", "suggestion", "route", "permission", "tableName"]),
     rows: [
       row({ item: "余额明细", bizType: "客户账户余额", owner: "财务运营", status: "00", suggestion: "查询账套、账户类型、账户对象和发生额", route: "#/balance", permission: "finance:balance", tableName: "fin_balance" }),
-      row({ item: "账户开通", bizType: "账户注册演示", owner: "运营配置", status: "10", suggestion: "只读流程页，真实开通需后端接口和幂等校验", route: "#/accountRegister", permission: "demo:finance:accountRegister", tableName: "fin_object_account / fin_private_account / fin_balance" }),
+      row({ item: "账户开通", bizType: "账户注册", owner: "运营配置", status: "10", suggestion: "账户开通需校验对象、类型和重复账户", route: "#/accountRegister", permission: "demo:finance:accountRegister", tableName: "fin_object_account / fin_private_account / fin_balance" }),
       row({ item: "站点身份", bizType: "站点账套主体", owner: "站点财务", status: "00", suggestion: "用于往来台账主体识别，不改变现有账户对象编码", route: "#/siteIdentity", permission: "demo:finance:ledger:site", tableName: "site_identity_demo" }),
       row({ item: "往来台账", bizType: "站点/代理借欠", owner: "站点财务", status: "10", suggestion: "会员/用户不允许进入借款、欠款或核销台账", route: "#/ledgerOverview", permission: "demo:finance:ledger:overview", tableName: "ledger_overview_demo" })
     ],
@@ -1099,7 +1099,7 @@ function fundPoolFlowModule() {
     route: "/finance/demo/fundPool/flow",
     permission: "demo:finance:fundPool:flow",
     scenario: "总站财务排查资金池余额时，按流水来源追踪充值、提现、额度调整和月结扣款。",
-    summary: [metric("本月增加", "¥670,000.00", "充值/加额", "success"), metric("本月减少", "¥416,000.00", "提现/减额/月结", "warning"), metric("月结扣款", "¥30,000.00", "已发生", "danger"), metric("流水笔数", "8", "演示数据", "info")],
+    summary: [metric("本月增加", "¥670,000.00", "充值/加额", "success"), metric("本月减少", "¥416,000.00", "提现/减额/月结", "warning"), metric("月结扣款", "¥30,000.00", "已发生", "danger"), metric("流水笔数", "8", "本月流水", "info")],
     quickActions: [quick("站点资金池", "siteFundPool"), quick("月结账单", "monthlySettlement"), quick("额度调整", "quotaAdjust")],
     columns: ["flowId", "siteName", "changeType", "changeAmount", "beforeBalance", "afterBalance", "operateTime", "operatorType", "settlementId"],
     filters: ["flowId", "siteName", "changeType", "settlementId"],
@@ -1149,7 +1149,7 @@ function cashRequestModule() {
     permission: "finance:request",
     scenario: "提现、充值等业务先进入申请池，再流转到收银流水。",
     actions: { approve: true, reject: true },
-    summary: [metric("待审核", "24", "存款/取款", "warning"), metric("今日通过", "86", "模拟数据", "success"), metric("驳回", "3", "余额或风控原因", "danger")],
+    summary: [metric("待审核", "24", "存款/取款", "warning"), metric("今日通过", "86", "通过记录", "success"), metric("驳回", "3", "余额或风控原因", "danger")],
     quickActions: [quick("收银流水", "cashOrder"), quick("充值/提现场景", "cashScenario")],
     columns: ["requestId", "userId", "tradeType", "amount", "status", "handler"],
     filters: ["requestId", "userId", "tradeType", "status"],
@@ -1165,9 +1165,9 @@ function cashRequestModule() {
 
 function cashOrderModule(title, table, route, permission, desc, subtitle) {
   return tableModule(title, subtitle, desc, table, route, permission, ["cashOrderId", "userId", "tradeType", "bookCode", "amount", "status", "fail"], ["cashOrderId", "userId", "tradeType", "bookCode", "status"], [
-    row({ cashOrderId: "CASH202605220001", userId: "1142889689825594113", userMobile: "13800000000", userName: "演示用户", relationId: "ORDER10001", tradeType: "withdraw", bookCode: "K0700", transAmt: "1000.00", discount: "0.00", amount: "1000.00", status: "10", fail: "", toUserName: "系统", remark: "提现演示" }),
-    row({ cashOrderId: "CASH202605220002", userId: "1142889689825594222", userMobile: "13700000000", userName: "充值用户", relationId: "ORDER10002", tradeType: "recharge_10", bookCode: "K0100", transAmt: "500.00", discount: "0.00", amount: "500.00", status: "00", fail: "", toUserName: "演示用户", remark: "充值演示" }),
-    row({ cashOrderId: "CASH202605220003", userId: "1142889689825594333", userMobile: "13600000000", userName: "异常用户", relationId: "ORDER10003", tradeType: "withdraw", bookCode: "K0700", transAmt: "800.00", discount: "0.00", amount: "800.00", status: "09", fail: "签名不一致", toUserName: "系统", remark: "失败演示" })
+    row({ cashOrderId: "CASH202605220001", userId: "1142889689825594113", userMobile: "13800000000", userName: "提现用户", relationId: "ORDER10001", tradeType: "withdraw", bookCode: "K0700", transAmt: "1000.00", discount: "0.00", amount: "1000.00", status: "10", fail: "", toUserName: "系统", remark: "提现待审" }),
+    row({ cashOrderId: "CASH202605220002", userId: "1142889689825594222", userMobile: "13700000000", userName: "充值用户", relationId: "ORDER10002", tradeType: "recharge_10", bookCode: "K0100", transAmt: "500.00", discount: "0.00", amount: "500.00", status: "00", fail: "", toUserName: "收款账户", remark: "充值成功" }),
+    row({ cashOrderId: "CASH202605220003", userId: "1142889689825594333", userMobile: "13600000000", userName: "异常用户", relationId: "ORDER10003", tradeType: "withdraw", bookCode: "K0700", transAmt: "800.00", discount: "0.00", amount: "800.00", status: "09", fail: "签名不一致", toUserName: "系统", remark: "失败待处理" })
   ], "流水类页面重点关注状态来源、失败原因和排障路径。");
 }
 
@@ -1193,7 +1193,7 @@ function cashPolicyModule() {
   return tableModule("收银策略", "配置中心", "按交易类型维护收银处理链，独立对应收银策略 Controller 和权限。", "fin_cash_policy", "/finance/cashPolicy", "finance:cashPolicy", ["policyName", "tradeType", "beanName", "sort", "status", "remark"], ["policyName", "tradeType", "beanName", "status"], [
     row({ policyName: "充值收银处理链", tradeType: "recharge_10", beanName: "CashOrderProcess", sort: "10", status: "00", remark: "充值收银主流程", tableName: "fin_cash_policy" }),
     row({ policyName: "提现风控链", tradeType: "withdraw", beanName: "RiskCheck", sort: "20", status: "00", remark: "提现前置风控", tableName: "fin_cash_policy" }),
-    row({ policyName: "提现记账处理链", tradeType: "withdraw", beanName: "BookOrderProcess", sort: "30", status: "10", remark: "演示待复核策略", tableName: "fin_cash_policy" })
+    row({ policyName: "提现记账处理链", tradeType: "withdraw", beanName: "BookOrderProcess", sort: "30", status: "10", remark: "待复核策略", tableName: "fin_cash_policy" })
   ], "收银策略与记账策略不可合并编辑，真实开发应分别校验权限、排序和启用状态。");
 }
 
@@ -1249,7 +1249,7 @@ function notificationCenterModule() {
       row({ noticeId: "NOTICE-20260523001", notificationType: "月结", noticeLevel: "high", title: "华南站点月结资金池不足", targetModule: "月结账单", owner: "总站财务", deadline: "今日 12:00", readStatus: "未读", route: "#/monthlySettlement", suggestion: "先补额度或退回调整", operateTime: "2026-05-23 09:10:00" }),
       row({ noticeId: "NOTICE-20260523002", notificationType: "对账", noticeLevel: "high", title: "支付宝通道对账差异 8800 元", targetModule: "渠道对账", owner: "财务运营", deadline: "30 分钟", readStatus: "未读", route: "#/reconcileCenter", suggestion: "核对渠道流水和系统流水", operateTime: "2026-05-23 09:12:00" }),
       row({ noticeId: "NOTICE-20260523003", notificationType: "审核", noticeLevel: "medium", title: "取款申请超过 20 分钟未处理", targetModule: "收银申请", owner: "财务审核", deadline: "10 分钟", readStatus: "未读", route: "#/cashRequest", suggestion: "进入存取款审核", operateTime: "2026-05-23 09:16:00" }),
-      row({ noticeId: "NOTICE-20260523004", notificationType: "报表", noticeLevel: "low", title: "月度财务报表已生成", targetModule: "报表中心", owner: "财务运营总监", deadline: "今日", readStatus: "已读", route: "#/reportCenter", suggestion: "可预览或导出演示", operateTime: "2026-05-23 09:18:00" })
+      row({ noticeId: "NOTICE-20260523004", notificationType: "报表", noticeLevel: "low", title: "月度财务报表已生成", targetModule: "报表中心", owner: "财务运营总监", deadline: "今日", readStatus: "已读", route: "#/reportCenter", suggestion: "可预览或导出", operateTime: "2026-05-23 09:18:00" })
     ],
     help: pageHelp("通知中心", "跨模块提醒和待办入口", ["notification_center_demo"], ["通知中心只做提醒、跳转和演示，不替代真实消息中心。", "不同角色应看到不同权限范围的通知。", "高优先级通知应包含责任人、SLA 和目标模块。"], ["真实开发需对接消息订阅、已读状态、推送渠道和权限过滤。"])
   });
@@ -1347,7 +1347,7 @@ function reportCenterModule() {
       row({ reportId: "RPT-DAILY-20260523", reportName: "日资金流水报表", reportType: "daily", period: "2026-05-23", reportDimension: "站点/通道/交易类型", aggregationRule: "收入、支出、净额", incomeAmount: "428560.00", expenseAmount: "214870.00", netAmount: "213690.00", generatedBy: "财务运营总监", generatedTime: "2026-05-23 09:30:00", exportFormat: "PDF/XLSX", reportStatus: "generated", suggestion: "可用于晨会汇报" }),
       row({ reportId: "RPT-MONTH-202605", reportName: "月度财务报表（P&L）", reportType: "monthly", period: "2026-05", reportDimension: "收入/成本/费用/利润", aggregationRule: "按会计分类聚合", incomeAmount: "9368000.00", expenseAmount: "7215000.00", netAmount: "2153000.00", generatedBy: "财务运营总监", generatedTime: "2026-05-23 09:20:00", exportFormat: "PDF/XLSX", reportStatus: "generated", suggestion: "可预览损益结构" }),
       row({ reportId: "RPT-AGING-202605", reportName: "账龄分析报表", reportType: "aging", period: "2026-05", reportDimension: "站点/代理/逾期天数", aggregationRule: "未结清金额按账龄分段", receivableAmount: "188000.00", payableAmount: "156000.00", netAmount: "32000.00", generatedBy: "系统", generatedTime: "2026-05-23 08:50:00", exportFormat: "XLSX", reportStatus: "generated", suggestion: "代理欠款逾期需重点跟进" }),
-      row({ reportId: "RPT-CASHFLOW-FC", reportName: "现金流量预测报表", reportType: "forecast", period: "2026-06", reportDimension: "站点/资金池/月结", aggregationRule: "基于历史充值提现和待扣月结预测", incomeAmount: "0.00", expenseAmount: "0.00", netAmount: "0.00", generatedBy: "系统", generatedTime: "", exportFormat: "PDF", reportStatus: "ready", suggestion: "演示生成预测报表" })
+      row({ reportId: "RPT-CASHFLOW-FC", reportName: "现金流量预测报表", reportType: "forecast", period: "2026-06", reportDimension: "站点/资金池/月结", aggregationRule: "基于历史充值提现和待扣月结预测", incomeAmount: "0.00", expenseAmount: "0.00", netAmount: "0.00", generatedBy: "系统", generatedTime: "", exportFormat: "PDF", reportStatus: "ready", suggestion: "生成预测报表" })
     ],
     help: pageHelp("报表中心", "正式财务报表展示", ["report_center_demo", "fin_cash_order", "fin_book_order", "fin_balance", "fund_pool_flow_demo", "ledger_demo"], ["报表中心提供管理层视角，不直接修改业务数据。", "标准报表包括日报、周报、月报、损益、账龄和现金流预测。", "生成、预览、导出均为前端演示，不调用真实报表服务。"], ["真实开发需统一报表口径、生成任务、导出记录、权限和数据快照。"])
   });
@@ -1363,7 +1363,7 @@ function reportBuilderModule() {
     route: "/finance/demo/reportBuilder",
     permission: "demo:finance:reportBuilder",
     scenario: "财务运营总监临时需要按站点、代理、交易类型或资金池来源组合报表时使用。",
-    summary: [metric("可选字段", "32", "收银/余额/月结/往来", "info"), metric("保存模板", "4", "演示模板", "success"), metric("可导出格式", "3", "PDF/XLSX/CSV", "warning")],
+    summary: [metric("可选字段", "32", "收银/余额/月结/往来", "info"), metric("保存模板", "4", "常用模板", "success"), metric("可导出格式", "3", "PDF/XLSX/CSV", "warning")],
     quickActions: [quick("报表中心", "reportCenter"), quick("客户余额", "customerBalanceHome"), quick("出入款报表", "paymentAccountReport")],
     columns: ["reportId", "reportName", "reportDimension", "aggregationRule", "exportFormat", "reportStatus"],
     filters: ["reportName", "reportDimension", "exportFormat", "reportStatus"],
@@ -1403,9 +1403,9 @@ function relationModule() {
     ["ledger_demo", "客户余额", "site_id + subject + counterparty", "产品补充原型，真实开发需新增表"],
     ["settlement_demo", "出入款帐户", "settlement_month + site_id", "产品补充原型，真实开发需新增月结表"],
     ["fund_pool_demo", "出入款帐户", "site_id", "产品补充原型，真实开发需新增资金池和流水表"],
-    ["report_center_demo", "记账模板", "period + dimension", "正式演示补充，真实开发需新增报表任务和快照"],
-    ["reconcile_center_demo", "收银流水", "channel + period", "正式演示补充，真实开发需对接渠道账单"],
-    ["refund_manage_demo", "收银流水", "original_order_id", "正式演示补充，真实开发需退款接口和回调"]
+    ["report_center_demo", "记账模板", "period + dimension", "正式补充能力，真实开发需新增报表任务和快照"],
+    ["reconcile_center_demo", "收银流水", "channel + period", "正式补充能力，真实开发需对接渠道账单"],
+    ["refund_manage_demo", "收银流水", "original_order_id", "正式补充能力，真实开发需退款接口和回调"]
   ];
   const mod = tableModule("表关系", "研发参考", "以运营业务域重新组织 16 张表，保留主要关联键和用途。", "schema_relation_demo", "/finance/demo/relation", "demo:finance:relation", ["tableName", "domain", "relation", "usage"], ["tableName", "domain"], tables.map(item => row({ tableName: item[0], domain: item[1], relation: item[2], usage: item[3], status: "00" })), "表关系页给研发参考，不作为日常运营入口。");
   mod.pageType = "reference";
@@ -1459,7 +1459,7 @@ function pageHelp(title, positioning, tables, rules, notes = []) {
   return {
     positioning,
     scenes: [`${title}用于${positioning}，面向财务运营、财务审核、风控运营或研发参考人员。`],
-    operations: ["查看摘要", "条件筛选", "查看详情", "新增/编辑演示", "删除演示", "导出演示", "打开功能说明"],
+    operations: ["查看摘要", "条件筛选", "查看详情", "新增/编辑", "删除", "导出", "打开功能说明"],
     fieldGroups,
     tables,
     rules,
@@ -1589,7 +1589,7 @@ function normalizeRow(key, mod, item, index) {
     relatedDocs: item.relatedDocs || buildRelatedDocs(item),
     exceptionReason: item.exceptionReason || item.fail || item.diffReason || item.diffReason || item.suggestion || "",
     ipAddress: item.ipAddress || `10.10.${index + 1}.23`,
-    deviceInfo: item.deviceInfo || "Chrome / MacOS / 演示环境",
+    deviceInfo: item.deviceInfo || "Chrome / MacOS / 办公终端",
     ...item,
     primaryNo: item.primaryNo || primaryValue
   };
@@ -1874,10 +1874,10 @@ function recordAudit(row, action, beforeStatus, afterStatus, remark, moduleKey =
     time: formatDateTime(new Date()),
     beforeStatus: beforeStatus || "未记录",
     afterStatus: afterStatus || "未记录",
-    remark: remark || "演示操作",
+    remark: remark || "业务操作",
     relatedDocs: row.relatedDocs || buildRelatedDocs(row) || targetId,
     ipAddress: row.ipAddress || "10.10.9.23",
-    deviceInfo: row.deviceInfo || "Chrome / MacOS / 演示环境",
+    deviceInfo: row.deviceInfo || "Chrome / MacOS / 办公终端",
     permission: mod.permission
   };
   appState.auditTrail = [log, ...(appState.auditTrail || [])].slice(0, 100);
@@ -1899,7 +1899,7 @@ function auditForRow(row) {
       afterStatus: status,
       remark: row.suggestion || "系统生成演示记录",
       ipAddress: row.ipAddress || "10.10.1.23",
-      deviceInfo: row.deviceInfo || "Chrome / MacOS / 演示环境"
+      deviceInfo: row.deviceInfo || "Chrome / MacOS / 办公终端"
     },
     {
       action: "运营复核",
@@ -1909,7 +1909,7 @@ function auditForRow(row) {
       afterStatus: status,
       remark: row.nextAction || "查看详情并按权限处理",
       ipAddress: row.ipAddress || "10.10.1.23",
-      deviceInfo: row.deviceInfo || "Chrome / MacOS / 演示环境"
+      deviceInfo: row.deviceInfo || "Chrome / MacOS / 办公终端"
     }
   ];
 }
@@ -1927,7 +1927,7 @@ function saveDemoData() {
   try {
     localStorage.setItem("financeDemoData", JSON.stringify(appState.data));
   } catch {
-    showToast("当前浏览器限制了本地存储，演示数据不会持久保存");
+    showToast("当前浏览器限制了本地存储，数据不会持久保存");
   }
 }
 
@@ -1941,7 +1941,7 @@ function resetDemoData() {
   Object.keys(appState.filters).forEach(key => { appState.filters[key] = {}; });
   initData();
   render();
-  showToast("已重置为初始 Mock 数据");
+  showToast("已恢复默认数据");
 }
 
 function syncTopbarState() {
@@ -2033,27 +2033,21 @@ function shouldShowRowAction(action, row) {
 
 function renderModule(mod) {
   const rows = filteredRows(mod);
-  const hasFlow = Array.isArray(mod.flow) && mod.flow.length;
   const domainTitle = mod.domainTitle || mod.subtitle;
-  const kicker = [domainTitle, mod.subtitle && mod.subtitle !== domainTitle ? mod.subtitle : "", mod.table].filter(Boolean).join(" · ");
+  const kicker = [domainTitle, mod.subtitle && mod.subtitle !== domainTitle ? mod.subtitle : ""].filter(Boolean).join(" · ");
   document.getElementById("app").innerHTML = `
     <section class="page-head formal-head">
       <div>
         <div class="page-kicker">${escapeHtml(kicker)}</div>
         <h1 class="page-heading">${escapeHtml(mod.title)}</h1>
-        <p class="page-desc">${escapeHtml(mod.desc)}</p>
       </div>
       <div class="page-head-actions">
-        <span class="page-type-pill">${escapeHtml(pageTypeName(mod.pageType || "management"))}</span>
         <button class="btn primary" type="button" data-action="help">功能说明</button>
       </div>
     </section>
-    ${renderBusinessOverview(mod)}
     ${renderSummary(mod)}
     ${renderFormalEnhancement(mod, rows)}
     ${renderReportBoard(mod, rows)}
-    ${renderDecisionBoard(mod, rows)}
-    ${hasFlow ? renderFlow(mod.flow) : ""}
     ${renderQuickActions(mod)}
     ${renderQuery(mod)}
     ${renderTablePanel(mod, rows)}
@@ -2117,9 +2111,8 @@ function renderDashboardCharts() {
   return `<section class="dashboard-suite">
     <div class="suite-head">
       <div>
-        <div class="section-kicker">正式驾驶舱</div>
-        <h2>收支、资金池、月结和风险一屏演示</h2>
-        <p>当前口径：${escapeHtml(range.label)} · 最后更新 ${escapeHtml(mockDataCenter.updatedAt)} · 图表为本地 Mock 计算。</p>
+        <div class="section-kicker">财务驾驶舱</div>
+        <h2>收支、资金池、月结和风险</h2>
       </div>
       <div class="range-tabs">
         ${timeRangeOptions.map(item => `<button class="${item.key === appState.timeRange ? "active" : ""}" type="button" data-action="set-time-range" data-range="${escapeHtml(item.key)}">${escapeHtml(item.label)}</button>`).join("")}
@@ -2211,14 +2204,14 @@ function renderHeatmap(values) {
 function renderReportShowcase(rows) {
   return `<section class="formal-workspace">
     <div class="section-heading">
-      <div><div class="section-kicker">报表工作台</div><h2>标准报表、预览和下载演示</h2></div>
-      <button class="btn primary" type="button" data-action="open-report-preview">生成报表演示</button>
+      <div><div class="section-kicker">报表工作台</div><h2>标准报表、预览和下载</h2></div>
+      <button class="btn primary" type="button" data-action="open-report-preview">生成报表</button>
     </div>
     <div class="report-template-grid">
       ${rows.map(row => `<article class="report-template">
         <div class="report-template-type">${escapeHtml(dictionaries.reportType[row.reportType] || row.reportType)}</div>
         <h3>${escapeHtml(row.reportName)}</h3>
-        <p>${escapeHtml(row.suggestion || "可生成预览和导出演示")}</p>
+        <p>${escapeHtml(row.period || "按当前周期")} · ${escapeHtml(row.reportDimension || "综合维度")} · ${escapeHtml(row.exportFormat || "XLSX")}</p>
         <div class="report-template-footer">
           ${formatValue(row.reportStatus, "reportStatus")}
           <button class="link-btn" type="button" data-action="open-report-preview" data-id="${escapeHtml(row.__id)}">预览</button>
@@ -2234,7 +2227,6 @@ function renderReportBuilderPanel() {
     <div>
       <div class="section-kicker">自定义报表构建器</div>
       <h2>字段选择、筛选、聚合、预览</h2>
-      <p>演示版不拖拽字段，但用勾选块表达真实系统应具备的配置能力。</p>
     </div>
     <div class="field-picker">${fields.map((field, index) => `<label><input type="checkbox" ${index < 6 ? "checked" : ""} /> ${escapeHtml(field)}</label>`).join("")}</div>
     <div class="builder-preview">
@@ -2259,21 +2251,25 @@ function renderReconcileBoard(rows) {
   return `<section class="reconcile-board">
     <div><span>差异金额</span><strong>${toCurrency(diff)}</strong></div>
     <div><span>自动平账</span><strong>${rows.filter(row => row.reconcileStatus === "matched").length} 批</strong></div>
-    <div><span>处理路径</span><strong>差异 -> 退款/补单 -> 审计</strong></div>
+    <div><span>超时批次</span><strong>${rows.filter(row => row.isOverdue === "是").length} 批</strong></div>
   </section>`;
 }
 
 function renderAccountReportPanel() {
+  const rows = filteredRows(activeModule());
+  const income = rows.reduce((sum, row) => sum + parseMoney(row.incomeAmount), 0);
+  const expense = rows.reduce((sum, row) => sum + parseMoney(row.expenseAmount), 0);
+  const net = rows.reduce((sum, row) => sum + parseMoney(row.netAmount), 0);
   return `<section class="account-report-panel">
-    <div><span>资金池增加来源</span><strong>站点/代理/会员充值 + 总站加额</strong></div>
-    <div><span>资金池减少来源</span><strong>站点/代理/会员提现 + 总站减额 + 月结扣款</strong></div>
-    <div><span>扣款原则</span><strong>资金不足阻断，不允许扣成负数</strong></div>
+    <div><span>收入合计</span><strong>${toCurrency(income)}</strong></div>
+    <div><span>支出合计</span><strong>${toCurrency(expense)}</strong></div>
+    <div><span>净额</span><strong>${toCurrency(net)}</strong></div>
   </section>`;
 }
 
 function renderApprovalTimelinePanel(title, steps) {
   return `<section class="approval-panel">
-    <div class="section-kicker">流程说明</div>
+    <div class="section-kicker">状态分布</div>
     <h2>${escapeHtml(title)}</h2>
     <div class="approval-steps">${steps.map((step, index) => `<div><span>${index + 1}</span><strong>${escapeHtml(step)}</strong></div>`).join("")}</div>
   </section>`;
@@ -2294,7 +2290,7 @@ function renderScenario(mod) {
       <div class="scenario-title">适用场景</div>
       <div class="scenario-text">${escapeHtml(mod.scenario)}</div>
     </div>
-    <span class="env-pill">演示模式 · 不调用 API</span>
+    <span class="env-pill">流程视图</span>
   </section>`;
 }
 
@@ -2312,17 +2308,16 @@ function renderReportBoard(mod, rows) {
       <span class="badge">${escapeHtml(profile.reportFocus.join(" / "))}</span>
     </div>
     <div class="report-grid">
-      ${renderReportCard("状态分布", "按当前筛选结果统计", statusItems)}
-      ${renderReportCard("金额与规模", "用于判断资金影响面", amountItems)}
-      ${renderReportCard("处理优先级", "用于运营下一步动作", operationItems)}
+      ${renderReportCard("状态分布", statusItems)}
+      ${renderReportCard("金额与规模", amountItems)}
+      ${renderReportCard("处理优先级", operationItems)}
     </div>
   </section>`;
 }
 
-function renderReportCard(title, desc, items) {
+function renderReportCard(title, items) {
   return `<div class="report-card">
     <div class="report-title">${escapeHtml(title)}</div>
-    <div class="report-desc">${escapeHtml(desc)}</div>
     <div class="report-list">
       ${items.map(item => `<div class="report-row">
         <span>${escapeHtml(item.label)}</span>
@@ -2334,7 +2329,7 @@ function renderReportCard(title, desc, items) {
 
 function renderDecisionBoard(mod, rows) {
   const profile = getDomainProfile(mod);
-  const actions = operationsForModule(mod).filter(item => !["打开功能说明", "导出演示"].includes(item)).slice(0, 5);
+  const actions = operationsForModule(mod).filter(item => !["打开功能说明", "导出"].includes(item)).slice(0, 5);
   const risks = buildRiskSignals(mod, rows);
   return `<section class="decision-board">
     <div class="decision-column">
@@ -2360,7 +2355,7 @@ function renderDecisionBoard(mod, rows) {
 function buildStatusDistribution(mod, rows) {
   const statusKeys = ["status", "settlementStatus", "ledgerStatus", "poolStatus", "quotaStatus", "reportStatus", "reconcileStatus", "refundStatus", "noticeLevel"];
   const statusKey = statusKeys.find(key => rows.some(row => row[key] !== undefined));
-  if (!statusKey) return [{ label: "演示记录", value: `${rows.length} 条`, tone: "info" }, { label: "页面类型", value: pageTypeName(mod.pageType || "management"), tone: "" }];
+  if (!statusKey) return [{ label: "记录数", value: `${rows.length} 条`, tone: "info" }, { label: "页面类型", value: pageTypeName(mod.pageType || "management"), tone: "" }];
   const counts = rows.reduce((acc, row) => {
     const value = row[statusKey] || "未设置";
     acc[value] = (acc[value] || 0) + 1;
@@ -2530,8 +2525,8 @@ function filterOptions(mod, key) {
 function renderTablePanel(mod, rows) {
   const visibleCols = displayColumns(mod);
   const toolbarButtons = [
-    canAction(mod, "add") ? `<button class="btn primary" type="button" data-action="add">新增演示</button>` : "",
-    canAction(mod, "export") ? `<button class="btn" type="button" data-action="export">导出演示</button>` : "",
+    canAction(mod, "add") ? `<button class="btn primary" type="button" data-action="add">新增</button>` : "",
+    canAction(mod, "export") ? `<button class="btn" type="button" data-action="export">导出</button>` : "",
     canAction(mod, "search") ? `<button class="btn" type="button" data-action="reset">重置筛选</button>` : ""
   ].filter(Boolean).join("");
   return `<section class="panel">
@@ -2539,15 +2534,11 @@ function renderTablePanel(mod, rows) {
       <div class="toolbar-left">
         ${toolbarButtons || `<span class="badge">只读页面</span>`}
       </div>
-      <div class="toolbar-right">
-        <span class="badge">${escapeHtml(mod.route)}</span>
-        <span class="badge">${escapeHtml(mod.permission)}:list</span>
-      </div>
     </div>
     ${renderTable(mod, rows)}
     <div class="pager">
-      <span>共 ${rows.length} 条演示数据</span>
-      <span>列表显示 ${visibleCols.length}/${(mod.columns || []).length} 个高频字段，完整字段在详情中查看</span>
+      <span>共 ${rows.length} 条数据</span>
+      <span>显示 ${visibleCols.length}/${(mod.columns || []).length} 个字段</span>
     </div>
   </section>`;
 }
@@ -2555,7 +2546,7 @@ function renderTablePanel(mod, rows) {
 function renderTable(mod, rows) {
   const cols = displayColumns(mod);
   const rowActions = ["detail", "approve", "reject", "confirmSettle", "rejectSettle", "applyQuota", "rematch", "markBalanced", "startRefund", "createSupplement", "markDelay", "closeDiff", "exportDiff", "edit", "delete"].filter(action => canAction(mod, action));
-  if (!rows.length) return `<div class="empty">暂无匹配的演示数据</div>`;
+  if (!rows.length) return `<div class="empty">暂无匹配数据</div>`;
   return `<div class="table-wrap"><table>
     <thead><tr>${cols.map(key => `<th>${escapeHtml(findField(mod, key).label)}</th>`).join("")}${rowActions.length ? `<th class="sticky-action">操作</th>` : ""}</tr></thead>
     <tbody>
@@ -2850,7 +2841,7 @@ function openForm(rowId = "") {
   const row = rowId ? findRow(rowId) : {};
   const fields = (mod.columns || []).map(key => findField(mod, key));
   const body = `<form id="demoForm" class="form-grid">${fields.map(field => `<div class="field"><label>${escapeHtml(field.label)}</label><input name="${escapeHtml(field.key)}" value="${escapeHtml(row[field.key] ?? "")}" placeholder="请输入${escapeHtml(field.label)}" /></div>`).join("")}</form>`;
-  const footer = `<button class="btn" type="button" data-action="close-modal">取消</button><button class="btn primary" type="button" data-action="save-form" data-id="${escapeHtml(rowId)}">保存演示</button>`;
+  const footer = `<button class="btn" type="button" data-action="close-modal">取消</button><button class="btn primary" type="button" data-action="save-form" data-id="${escapeHtml(rowId)}">保存</button>`;
   openModal(rowId ? `编辑${mod.title}` : `新增${mod.title}`, body, footer);
 }
 
@@ -2863,13 +2854,13 @@ function saveForm(rowId) {
     const index = appState.data[key].findIndex(item => item.__id === rowId);
     const beforeStatus = rowStatusLabel(appState.data[key][index] || {});
     appState.data[key][index] = { ...appState.data[key][index], ...values, updateTime: formatDateTime(new Date()) };
-    recordAudit(appState.data[key][index], `编辑${mod.title}`, beforeStatus, rowStatusLabel(appState.data[key][index]), "编辑演示数据");
-    showToast("已保存编辑演示");
+    recordAudit(appState.data[key][index], `编辑${mod.title}`, beforeStatus, rowStatusLabel(appState.data[key][index]), "编辑数据");
+    showToast("已保存");
   } else {
     const nextRow = normalizeRow(key, mod, { __id: `${key}-${Date.now()}`, ...values }, appState.data[key].length + 1);
     appState.data[key].unshift(nextRow);
-    recordAudit(nextRow, `新增${mod.title}`, "创建", rowStatusLabel(nextRow), "新增演示数据");
-    showToast("已新增演示数据");
+    recordAudit(nextRow, `新增${mod.title}`, "创建", rowStatusLabel(nextRow), "新增数据");
+    showToast("已新增");
   }
   saveDemoData();
   closeModal();
@@ -2878,6 +2869,7 @@ function saveForm(rowId) {
 
 function openHelp() {
   const mod = activeModule();
+  const profile = getDomainProfile(mod);
   const help = mod.help || pageHelp(mod.title, mod.desc, [mod.table], [mod.desc]);
   const statusFlow = appState.activeKey === "reconcileCenter"
     ? [
@@ -2891,11 +2883,18 @@ function openHelp() {
     : mod.subtitle === "往来台账"
     ? ["待确认 -> 生效中 -> 部分还款/已逾期 -> 已结清 -> 已核销。"]
     : ["待处理 -> 处理中 -> 成功/失败 -> 已归档；配置类可启用或停用。"];
+  const flowItems = Array.isArray(mod.flow) && mod.flow.length
+    ? mod.flow.map((item, index) => `${index + 1}. ${item[0]}：${item[1]}（#/${item[2]}）`)
+    : [`${mod.title}：筛选列表 -> 查看详情 -> 执行业务操作 -> 记录审计/导出结果。`];
   const body = `
     ${helpBlock("页面定位", [help.positioning || mod.desc])}
+    ${helpBlock("业务目标", [profile.objective])}
+    ${helpBlock("核心数据", [profile.dataScope, `关注指标：${profile.reportFocus.join("、")}`])}
+    ${helpBlock("责任边界", [profile.rule, `责任角色：${profile.owner}`])}
     ${helpBlock("模块归属", [`业务域：${mod.domainTitle || mod.subtitle}`, `页面类型：${pageTypeName(mod.pageType || "management")}`, "四大模块整合只调整运营导航，不合并独立 Controller、权限或表结构。"])}
     ${helpBlock("运营使用场景", help.scenes || [mod.scenario || mod.desc])}
     ${helpBlock("核心操作", operationsForModule(mod))}
+    ${helpBlock("流程说明", flowItems)}
     ${helpBlock("字段分组", Object.entries(fieldGroups).map(([key, fields]) => `${groupName(key)}：${fields.join("、")}`))}
     ${helpBlock("状态流转", statusFlow)}
     ${helpBlock("关联模块", (mod.quickActions || []).filter(item => item.target && item.target !== "__help").map(item => `${item.label}：#/${item.target}`))}
@@ -2931,10 +2930,10 @@ function operationsForModule(mod) {
   if (actions.markDelay) labels.push("标记通道延迟");
   if (actions.closeDiff) labels.push("关闭差异并留痕");
   if (actions.exportDiff) labels.push("导出差异明细");
-  if (actions.add) labels.push("新增演示");
-  if (actions.edit) labels.push("编辑演示");
-  if (actions.delete) labels.push("删除演示");
-  if (actions.export) labels.push("导出演示");
+  if (actions.add) labels.push("新增");
+  if (actions.edit) labels.push("编辑");
+  if (actions.delete) labels.push("删除");
+  if (actions.export) labels.push("导出");
   labels.push("打开功能说明");
   if (mod.pageType !== "management") labels.push("通过快捷入口跳转到独立管理页");
   return labels;
@@ -2952,13 +2951,13 @@ function findRow(rowId) {
 function openDelete(rowId) {
   const mod = activeModule();
   if (!canAction(mod, "delete")) {
-    showToast("当前页面为只读聚合/检查页，不支持删除演示");
+    showToast("当前页面为只读聚合/检查页，不支持删除");
     return;
   }
   const row = findRow(rowId);
   const labelKey = (mod.columns || [])[0];
   const label = row[labelKey] || rowId;
-  openModal("删除确认", `<p>确认删除演示数据 <span class="code">${escapeHtml(label)}</span> 吗？刷新页面后 mock 数据会恢复。</p>`, `<button class="btn" type="button" data-action="close-modal">取消</button><button class="btn danger" type="button" data-action="confirm-delete" data-id="${escapeHtml(rowId)}">删除</button>`);
+  openModal("删除确认", `<p>确认删除 <span class="code">${escapeHtml(label)}</span> 吗？</p>`, `<button class="btn" type="button" data-action="close-modal">取消</button><button class="btn danger" type="button" data-action="confirm-delete" data-id="${escapeHtml(rowId)}">删除</button>`);
 }
 
 function openApproval(rowId, result) {
@@ -2978,7 +2977,7 @@ function openApproval(rowId, result) {
       <div class="detail-grid">
         <div class="detail-item"><div class="detail-label">申请单号</div><div class="detail-value">${escapeHtml(recordId)}</div></div>
         <div class="detail-item"><div class="detail-label">业务类型</div><div class="detail-value">${escapeHtml(tradeName)}</div></div>
-        <div class="detail-item"><div class="detail-label">主体</div><div class="detail-value">${escapeHtml(row.userName || row.applicant || row.userId || row.customerName || "演示主体")}</div></div>
+        <div class="detail-item"><div class="detail-label">主体</div><div class="detail-value">${escapeHtml(row.userName || row.applicant || row.userId || row.customerName || "业务主体")}</div></div>
         <div class="detail-item"><div class="detail-label">金额</div><div class="detail-value">${formatValue(row.amount || row.refundAmount || row.expenseAmount, "money")}</div></div>
       </div>
     </section>
@@ -3026,7 +3025,7 @@ function approvalSubject(row) {
 }
 
 function approvalRecordId(row) {
-  return row.requestId || row.refundId || row.__id || "演示申请";
+  return row.requestId || row.refundId || row.__id || "业务申请";
 }
 
 function openSettlementConfirm(rowId) {
@@ -3273,11 +3272,11 @@ function formatDateTime(date) {
 
 function confirmDelete(rowId) {
   const row = findRow(rowId);
-  recordAudit(row, `删除${activeModule().title}`, rowStatusLabel(row), "已删除", "删除演示数据");
+  recordAudit(row, `删除${activeModule().title}`, rowStatusLabel(row), "已删除", "删除数据");
   appState.data[appState.activeKey] = appState.data[appState.activeKey].filter(row => row.__id !== rowId);
   saveDemoData();
   closeModal();
-  showToast("已删除演示数据");
+  showToast("已删除");
   render();
 }
 
@@ -3323,9 +3322,9 @@ function openReportPreview(rowId = "") {
       <div>
         <div class="section-kicker">打印 / PDF 预览</div>
         <h2>${escapeHtml(title)}</h2>
-        <p>演示口径：${escapeHtml(row.period || currentTimeRange().label)} · 生成时间：${escapeHtml(row.generatedTime || formatDateTime(new Date()))}</p>
+        <p>周期：${escapeHtml(row.period || currentTimeRange().label)} · 生成时间：${escapeHtml(row.generatedTime || formatDateTime(new Date()))}</p>
       </div>
-      <span class="status success">演示预览</span>
+      <span class="status success">预览</span>
     </div>
     <div class="print-kpis">
       <div><span>收入金额</span><strong>${formatValue(row.incomeAmount || mockDataCenter.kpi.todayIncome, "money")}</strong></div>
@@ -3333,9 +3332,8 @@ function openReportPreview(rowId = "") {
       <div><span>净额</span><strong>${formatValue(row.netAmount || mockDataCenter.kpi.todayIncome - mockDataCenter.kpi.todayExpense, "money")}</strong></div>
     </div>
     ${renderLineChart(mockDataCenter.trend, mockDataCenter.expenseTrend)}
-    <p class="muted-text">真实系统应由后端生成快照、PDF/XLSX 文件和导出记录；当前只做静态预览演示。</p>
   </section>`;
-  openModal("报表预览", body, `<button class="btn" type="button" data-action="close-modal">关闭</button><button class="btn primary" type="button" data-action="export">下载演示</button>`);
+  openModal("报表预览", body, `<button class="btn" type="button" data-action="close-modal">关闭</button><button class="btn primary" type="button" data-action="export">下载</button>`);
 }
 
 function reconcileActionProfile(action) {
@@ -3543,7 +3541,7 @@ function openExportModal(scope = "list", rowId = "") {
       <h3>${isDiff ? "导出差异明细" : "导出条件确认"}</h3>
       <div class="detail-grid">
         <div class="detail-item"><div class="detail-label">导出范围</div><div class="detail-value">${escapeHtml(isDiff ? `${row.reconcileId} 差异明细` : `${mod.title}当前筛选结果`)}</div></div>
-        <div class="detail-item"><div class="detail-label">命中记录</div><div class="detail-value">${rows.length} 条演示数据</div></div>
+        <div class="detail-item"><div class="detail-label">命中记录</div><div class="detail-value">${rows.length} 条数据</div></div>
         <div class="detail-item"><div class="detail-label">导出权限</div><div class="detail-value">${escapeHtml(mod.permission)}:export · 当前角色 ${escapeHtml(activeRole().label)}</div></div>
         <div class="detail-item"><div class="detail-label">筛选条件</div><div class="detail-value">${escapeHtml(currentFilterSummary())}</div></div>
       </div>
@@ -3556,12 +3554,12 @@ function openExportModal(scope = "list", rowId = "") {
     </section>
     <section class="detail-section export-task">
       <h3>导出任务状态</h3>
-      <p>确认后生成异步导出任务，状态流为：待生成 -> 生成中 -> 已生成 -> 下载记录。当前为前端 Mock，不下载真实文件。</p>
+      <p>确认后生成异步导出任务，状态流为：待生成 -> 生成中 -> 已生成 -> 下载记录。</p>
       <div class="download-record">最近下载记录：${escapeHtml(activeRole().label)} / ${formatDateTime(new Date())} / ${isDiff ? "差异明细" : mod.title} / XLSX</div>
     </section>
   `;
   const footer = `<button class="btn" type="button" data-action="close-modal">取消</button><button class="btn primary" type="button" data-action="confirm-export-task" data-id="${escapeHtml(rowId)}" data-export-scope="${escapeHtml(scope)}">生成导出任务</button>`;
-  openModal(isDiff ? "导出差异明细" : "导出演示", body, footer);
+  openModal(isDiff ? "导出差异明细" : "导出", body, footer);
 }
 
 function exportFieldsFor(mod, isDiff) {
@@ -3591,7 +3589,6 @@ function confirmExportTask(scope, rowId) {
       <div class="detail-item"><div class="detail-label">导出字段</div><div class="detail-value">${escapeHtml(selected.join("、"))}</div></div>
       <div class="detail-item"><div class="detail-label">下载记录</div><div class="detail-value">${escapeHtml(activeRole().label)} / ${formatDateTime(new Date())}</div></div>
     </div>
-    <p>真实系统应保存导出任务、下载记录、数据范围和权限点；演示版仅展示交互闭环。</p>
   </section>`;
   openModal("导出任务", body, `<button class="btn primary" type="button" data-action="close-modal">完成</button>`);
 }
