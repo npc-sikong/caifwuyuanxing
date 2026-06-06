@@ -1,83 +1,66 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>财务中心运营后台</title>
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <div class="app-shell">
-      <aside class="sidebar" id="sidebar">
-        <div class="brand">
-          <div class="brand-mark">FIN</div>
-          <div class="brand-text">
-            <div class="brand-title">财务中心</div>
-            <div class="brand-subtitle">运营后台</div>
-          </div>
-          <button class="icon-button sidebar-collapse" id="sidebarCollapse" type="button" title="收起菜单" aria-label="收起菜单">‹</button>
-        </div>
-        <nav class="menu" id="menu"></nav>
-      </aside>
-
-      <div class="workspace">
-        <header class="topbar">
-          <button class="icon-button mobile-menu" id="menuToggle" type="button" title="展开菜单">☰</button>
-          <div>
-            <div class="breadcrumb" id="breadcrumb">工作台 / 财务总览</div>
-            <div class="topbar-title" id="pageTitle">财务总览</div>
-          </div>
-          <div class="global-search">
-            <input id="globalSearch" type="search" placeholder="搜索模块、表名或场景" />
-            <button class="btn" type="button" data-action="global-search">搜索</button>
-            <div class="search-dropdown" id="searchDropdown"></div>
-          </div>
-          <div class="topbar-actions">
-            <label class="topbar-control">
-              <span>角色</span>
-              <select id="roleSelect">
-                <option value="director">财务运营总监</option>
-                <option value="clerk">财务专员</option>
-                <option value="auditor">财务审核员</option>
-                <option value="siteAdmin">站点管理员</option>
-                <option value="observer">只读观察者</option>
-              </select>
-            </label>
-            <label class="topbar-control">
-              <span>时间</span>
-              <select id="timeRangeSelect">
-                <option value="today">今日</option>
-                <option value="yesterday">昨日</option>
-                <option value="week">本周</option>
-                <option value="month">本月</option>
-                <option value="lastMonth">上月</option>
-                <option value="quarter">近三月</option>
-                <option value="custom">自定义</option>
-              </select>
-            </label>
-            <button class="btn" type="button" data-action="open-notification">通知</button>
-            <button class="btn" type="button" data-action="reset-demo-data">恢复默认</button>
-            <span class="env-pill role" id="roleHint">财务运营总监 · 全局可见</span>
-          </div>
-        </header>
-
-        <main class="content" id="app"></main>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>财务中心运营后台原型 - 按菜单结构版</title>
+  <link rel="stylesheet" href="assets/finance-style.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>财务中心运营后台</h1>
+      <p>按「一级菜单 / 二级页面」精确拆分<br>核心：资金出入、记账、流水、对账、审计全链路清晰</p>
+    </div>
+    <div class="menu-wrap" id="menu"></div>
+  </aside>
+  <section class="content">
+    <header class="topbar">
+      <div class="crumb">
+        <div class="path" id="breadcrumb">财务总览 / 资金看板</div>
+        <h2 id="pageTitle">资金看板</h2>
       </div>
+      <div class="top-actions">
+        <div class="search"><span>⌕</span><input placeholder="搜索流水号 / 账户 / 批次 / 模板" /></div>
+        <span class="badge">菜单结构 <strong>10 一级 / 21 二级</strong></span>
+        <button class="btn help-btn" onclick="openFeatureHelp()">模块功能说明</button>
+        <button class="btn primary" onclick="openTrace('CASH202605280001')">链路追踪</button>
+      </div>
+    </header>
+    <main class="main" id="main"></main>
+  </section>
+</div>
+
+<div class="drawer-mask" id="drawerMask" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-header">
+    <h3 id="drawerTitle">资金链路追踪</h3>
+    <button class="close" onclick="closeDrawer()">×</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+<div class="feature-mask" id="featureHelpMask" onclick="closeFeatureHelp(event)">
+  <section class="feature-modal" id="featureHelpModal" onclick="event.stopPropagation()">
+    <div class="feature-header">
+      <div>
+        <h3 id="featureHelpTitle">模块功能说明</h3>
+        <p id="featureHelpModule">财务中心</p>
+      </div>
+      <button class="close" onclick="closeFeatureHelp()">×</button>
     </div>
+    <div class="feature-body" id="featureHelpBody"></div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
 
-    <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
-      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <header class="modal-header">
-          <h2 id="modalTitle">弹窗</h2>
-          <button class="icon-button" id="modalClose" type="button" title="关闭">×</button>
-        </header>
-        <div class="modal-body" id="modalBody"></div>
-        <footer class="modal-footer" id="modalFooter"></footer>
-      </section>
-    </div>
-
-    <div class="toast" id="toast"></div>
-
-    <script src="./app.js"></script>
-  </body>
+<script src="assets/finance-config.js"></script>
+<script src="assets/finance-data.js"></script>
+<script src="assets/finance-ledger-flows.js"></script>
+<script src="assets/finance-template-helpers.js"></script>
+<script src="assets/finance-accounting-excel-data.js"></script>
+<script src="assets/finance-accounting-excel-helpers.js"></script>
+<script src="assets/finance-pages.js"></script>
+<script src="assets/finance-core.js"></script>
+</body>
 </html>
