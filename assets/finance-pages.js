@@ -164,19 +164,22 @@ const pages = {
     `,'流水中心 / 账户流水')
   },
   'entry-detail'(){
-    return pageShell('会计分录','按 v4 会计分录页签展示每个模板的正式分录与控制台账。借方、贷方和控制台账按同一业务关系聚合查看，不拆成孤立记录。',`
-      <div class="relation-brief">
-        <div class="relation-item"><strong>v4 来源</strong><span>本页 ${accountingEntries.length} 条明细来自《资金账变会计模板与会计分录_v4_财务模块开发落地版.xlsx》的“会计分录”页签。</span></div>
-        <div class="relation-item"><strong>关系展示</strong><span>每个模板一行聚合借方、贷方和控制台账，财务先看业务关系，再看具体分录行。</span></div>
-        <div class="relation-item"><strong>控制台账</strong><span>fund_pool_balance、最高可提现额度等只做控制项复核，不进入正式资产负债。</span></div>
+    const formalCount = accountingEntries.filter(isFormalAccountingEntry).length;
+    const controlCount = accountingEntries.length - formalCount;
+    return pageShell('会计分录','按 v4 会计分录页签生成真实记账报表。一个模板主账单下按分录步骤生成多条子账单，每条记录只代表一个账本或控制台账影响。',`
+      <div class="grid grid-4" style="margin-bottom:16px">
+        ${metric('主账单',`${accountingTemplates.length} 个`,'按模板编码生成','主','blue')}
+        ${metric('子分录',`${accountingEntries.length} 条`,'一行一个账本影响','子','green')}
+        ${metric('正式分录',`${formalCount} 条`,'进入借贷平衡','凭','orange')}
+        ${metric('控制台账',`${controlCount} 条`,'不进正式借贷','控','purple')}
       </div>
       <div class="card">
-        ${toolbar([select('模板编码',templateCodes()),select('覆盖状态',['已覆盖','部分覆盖','未实现','需补记','控制台账']),input('模板编码 / 科目 / 源表')],'<button class="btn primary">导出 v4 分录</button>')}
-        ${renderTable(['模板编码','业务名称','触发状态','借方','贷方','控制台账','覆盖状态','配对状态'], accountingEntryRelationRows(), '<button class="btn" onclick="openTrace(\'TPL-MDEP-001\')">追踪</button>')}
+        ${toolbar([select('主账单',templateCodes().map(code=>accountingMainOrderNo(code))),select('分录性质',['正式分录','控制台账']),select('覆盖状态',['已覆盖','部分覆盖','未实现','需补记','控制台账']),input('主订单号 / 子订单号 / 科目 / 源表')],'<button class="btn primary">导出分录报表</button>')}
+        ${renderTable(['主订单号','子订单号','分录序号','模板编码','业务名称','借贷/控制方向','科目编码','科目名称','科目类型','金额表达式','主体','来源/去向','源表字段','分录性质','覆盖状态','当前系统事实'], accountingLedgerReportRows(), '<button class="btn" onclick="openTrace(\'TPL-MDEP-001\')">追踪</button>')}
       </div>
       <div class="card" style="margin-top:16px">
-        <h3>v4 原始分录明细</h3>
-        ${renderTable(['模板编码','业务名称','行号','借贷/控制方向','科目编码','科目名称','科目类型','金额表达式','主体','来源/去向','源表','源字段','是否正式分录','当前是否覆盖','当前系统事实'], accountingEntryDisplayRows(), '<button class="btn" onclick="go(\'template-version\')">编辑</button>')}
+        <h3>主账单汇总</h3>
+        ${renderTable(['主订单号','模板编码','业务名称','触发状态','子分录数','正式分录','控制台账','借贷行数','覆盖状态','补记建议'], accountingMainBillRows(), '<button class="btn" onclick="openTemplateStepDetail(\'TPL-MDEP-001\')">分录详情</button>')}
       </div>
       <div class="card" style="margin-top:16px">
         <h3>凭证规则索引</h3>

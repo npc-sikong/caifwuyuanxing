@@ -114,6 +114,64 @@ function accountingEntryDisplayRows(){
   });
 }
 
+function accountingMainOrderNo(templateCode){
+  return `MBILL-${templateCode}`;
+}
+
+function accountingSubOrderNo(templateCode, lineNo){
+  const step = String(lineNo || '0').padStart(3, '0');
+  return `${accountingMainOrderNo(templateCode)}-${step}`;
+}
+
+function accountingEntryKind(row){
+  return isFormalAccountingEntry(row) ? '正式分录' : '控制台账';
+}
+
+function accountingLedgerReportRows(){
+  return accountingEntries.map(row=>{
+    const code = accountingValue(row,'模板编码');
+    const template = accountingTemplateMap[code] || {};
+    const lineNo = accountingValue(row,'行号');
+    return [
+      accountingMainOrderNo(code),
+      accountingSubOrderNo(code, lineNo),
+      lineNo,
+      code,
+      accountingValue(template,'业务名称'),
+      accountingValue(row,'借贷/控制方向'),
+      accountingValue(row,'科目编码'),
+      accountingValue(row,'科目名称'),
+      accountingValue(row,'科目类型'),
+      accountingValue(row,'金额表达式'),
+      accountingValue(row,'主体'),
+      accountingValue(row,'来源/去向'),
+      `${accountingValue(row,'源表')}.${accountingValue(row,'源字段')}`,
+      accountingEntryKind(row),
+      accountingValue(row,'当前是否覆盖'),
+      accountingValue(row,'当前系统事实'),
+    ];
+  });
+}
+
+function accountingMainBillRows(){
+  return accountingTemplates.map(template=>{
+    const code = accountingValue(template,'模板编码');
+    const stats = accountingTemplateStats(code);
+    return [
+      accountingMainOrderNo(code),
+      code,
+      accountingValue(template,'业务名称'),
+      accountingValue(template,'触发状态'),
+      `${stats.entries.length} 条子分录`,
+      `${stats.formalCount} 正式`,
+      `${stats.controlCount} 控制`,
+      `${stats.debitCount} 借 / ${stats.creditCount} 贷`,
+      stats.coverage,
+      accountingValue(template,'补记建议'),
+    ];
+  });
+}
+
 function accountingBatchRows(){
   return accountingTemplates.map(row=>{
     const code = accountingValue(row,'模板编码');
