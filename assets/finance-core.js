@@ -49,12 +49,12 @@ function filterAccountFlow(){
   const status = document.getElementById('accountFlowStatusFilter')?.value || '流水状态';
   const keyword = (document.getElementById('accountFlowKeyword')?.value || '').trim().toLowerCase();
   const rows = accountFlowRowsWithDate().filter(row=>{
-    const [dateText,,businessType,,businessNo,subjectType,,,,,,,,sourceId,statusText] = row;
+    const [dateText,,businessType, triggerModule, eventNo, subjectType, subject,, accountName, direction,, balanceEffect, systemFact,, statusText] = row;
     const matchedTime = time === '时间筛选' || accountFlowDateMatched(dateText, time);
     const matchedSubject = subject === '主体类型' || subjectType === subject;
     const matchedBusiness = business === '业务类型' || businessType === business;
     const matchedStatus = status === '流水状态' || statusText === status;
-    const matchedKeyword = !keyword || `${businessNo} ${sourceId}`.toLowerCase().includes(keyword);
+    const matchedKeyword = !keyword || `${businessType} ${triggerModule} ${eventNo} ${subject} ${accountName} ${direction} ${balanceEffect} ${systemFact}`.toLowerCase().includes(keyword);
     return matchedTime && matchedSubject && matchedBusiness && matchedStatus && matchedKeyword;
   });
   const table = document.getElementById('accountFlowTable');

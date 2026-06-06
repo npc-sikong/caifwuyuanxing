@@ -179,32 +179,26 @@ function cashFlowToolbar(){
   return toolbar([
     `<select class="select" id="cashFlowBusinessFilter" onchange="filterCashFlow()"><option>业务类型</option><option>充值</option><option>提现</option></select>`,
     `<select class="select" id="cashFlowSubjectFilter" onchange="filterCashFlow()"><option>主体类型</option>${cashFlowSubjectTypes.map(o=>`<option>${o}</option>`).join('')}</select>`,
-    `<select class="select" id="cashFlowChannelFilter" onchange="filterCashFlow()"><option>三方渠道</option><option>Pay-A 支付通道</option><option>Pay-C 支付通道</option><option>WD-B 代付通道</option><option>USDT-TRC20 通道</option></select>`,
+    `<select class="select" id="cashFlowChannelFilter" onchange="filterCashFlow()"><option>渠道类型</option><option>支付通道</option><option>代付通道</option><option>USDT 通道</option></select>`,
     `<select class="select" id="cashFlowStatusFilter" onchange="filterCashFlow()"><option>流水状态</option><option>已记账</option><option>待审批</option><option>失败</option></select>`,
-    `<select class="select" id="cashFlowCallbackFilter" onchange="filterCashFlow()"><option>回调状态</option><option>是</option><option>否</option></select>`,
-    `<select class="select" id="cashFlowFeeCodeFilter" onchange="filterCashFlow()"><option>商户资费编码</option><option>PAY_FEE_A</option><option>PAY_FEE_MANUAL</option><option>WD_FEE_B</option><option>USDT_TRC20_FEE</option></select>`,
-    `<input class="input" id="cashFlowKeyword" placeholder="渠道订单号 / 业务单号 / 收银流水ID" oninput="filterCashFlow()" />`
+    `<input class="input" id="cashFlowKeyword" placeholder="主体 / 渠道 / 状态" oninput="filterCashFlow()" />`
   ],'<button class="btn primary">导出流水</button>');
 }
 function cashFlowFilteredRows(){
   const dateFilter = document.getElementById('cashFlowDateFilter')?.value || '今日';
   const business = document.getElementById('cashFlowBusinessFilter')?.value || '业务类型';
   const subject = document.getElementById('cashFlowSubjectFilter')?.value || '主体类型';
-  const channel = document.getElementById('cashFlowChannelFilter')?.value || '三方渠道';
+  const channel = document.getElementById('cashFlowChannelFilter')?.value || '渠道类型';
   const status = document.getElementById('cashFlowStatusFilter')?.value || '流水状态';
-  const callback = document.getElementById('cashFlowCallbackFilter')?.value || '回调状态';
-  const feeCode = document.getElementById('cashFlowFeeCodeFilter')?.value || '商户资费编码';
   const keyword = (document.getElementById('cashFlowKeyword')?.value || '').trim().toLowerCase();
   return cashierFlowRows().filter(row=>{
     const matchedDate = cashFlowMatchedDate(row[1], dateFilter);
     const matchedBusiness = business === '业务类型' || row[4] === business;
     const matchedSubject = subject === '主体类型' || row[2] === subject;
-    const matchedChannel = channel === '三方渠道' || row[5] === channel;
+    const matchedChannel = channel === '渠道类型' || cashFlowChannelLabel(row) === channel;
     const matchedStatus = status === '流水状态' || row[10] === status;
-    const matchedCallback = callback === '回调状态' || (row[10] === '已记账' ? '是' : '否') === callback;
-    const matchedFeeCode = feeCode === '商户资费编码' || cashFlowMerchantFeeCode(row) === feeCode;
-    const matchedKeyword = !keyword || `${row[0]} ${row[3]} ${row[6]} ${row[7]}`.toLowerCase().includes(keyword);
-    return matchedDate && matchedBusiness && matchedSubject && matchedChannel && matchedStatus && matchedCallback && matchedFeeCode && matchedKeyword;
+    const matchedKeyword = !keyword || `${row[0]} ${row[2]} ${row[4]} ${cashFlowChannelLabel(row)} ${row[10]}`.toLowerCase().includes(keyword);
+    return matchedDate && matchedBusiness && matchedSubject && matchedChannel && matchedStatus && matchedKeyword;
   });
 }
 function cashFlowFee(row){
@@ -230,43 +224,33 @@ function cashFlowMerchantFeeCode(row){
   if(row[5].includes('USDT')) return 'USDT_TRC20_FEE';
   return '-';
 }
+function cashFlowChannelLabel(row){
+  const channel = row[5];
+  if(channel.includes('WD-B')) return '代付通道';
+  if(channel.includes('USDT')) return 'USDT 通道';
+  if(channel.includes('Pay')) return '支付通道';
+  return '其他通道';
+}
 function cashFlowDisplayRows(rows){
   return rows.map(row=>{
     const amount = parseAmount(row[8]);
     const fee = cashFlowFee(row);
     const received = row[4] === '充值' ? Math.max(amount - fee, 0) : amount;
-    const [userNo,userName,phone] = cashFlowUserMeta(row);
-    const detailNo = row[3].replace('CASH','DETAIL');
-    const summaryNo = row[3].replace('CASH','SUM');
+    const actualLabel = row[4] === '充值' ? '到账' : '出款';
     return [
+      row[1],
       row[0],
       row[2],
-      summaryNo,
-      detailNo,
-      row[3],
       row[4],
-      row[5],
-      row[6],
-      row[7],
+      cashFlowChannelLabel(row),
       `${row[8]} ${row[9]}`,
-      `${formatAmount(received)} ${row[9]}`,
-      `0.00 ${row[9]}`,
-      '0.00',
       fee ? `${formatAmount(fee)} ${row[9]}` : '-',
-      row[1],
-      userNo,
-      row[10] === '失败' ? '异常' : '正常',
-      row[10] === '已记账' ? '成功' : row[10],
-      row[10] === '已记账' ? '是' : '否',
-      `${row[2]}${row[4]} / ${row[11]}`,
-      userName,
-      phone,
-      cashFlowMerchantFeeCode(row),
-      row[11]
+      `${actualLabel} ${formatAmount(received)} ${row[9]}`,
+      row[10]
     ];
   });
 }
 function renderCashFlowTable(rows=cashierFlowRows().filter(row=>cashFlowMatchedDate(row[1], '今日'))){
-  return renderTable(['主体','主体类型','汇总流水','明细流水','收银流水ID','业务类型','三方渠道','渠道订单号','业务单号','交易金额','到账金额','抵扣金额','抵扣积分','手续费','交易时间','用户编号','业务状态','交易状态','回调状态','业务说明','用户姓名','手机号','商户资费编码','记账批次'], cashFlowDisplayRows(rows), '<button class="btn" onclick="openTrace(\'CASH202605280001\')">追踪</button> <button class="btn" onclick="go(\'third-reconcile\')">对账</button>');
+  return renderTable(['时间','主体','主体类型','业务类型','渠道类型','交易金额','手续费','到账/出款','状态'], cashFlowDisplayRows(rows), '<button class="btn" onclick="openTrace(\'CASH202605280001\')">追踪</button> <button class="btn" onclick="go(\'third-reconcile\')">对账</button>');
 }
 const businessTypeOptions = ['用户充值','用户提现','投注建仓','中奖结算','礼金发放','推广返水收益','推广充值收益','推广首充收益','VIP周礼金','晋升礼金','投注返水收益','代理分润','分销返点','运营费用','三方手续费','手动上分','总站资金调入','总站资金调出','代理欠款清偿','站点充值','资金池归集','站点盈亏月结','站点手续费月结','三方场馆费用月结','运营费用月结','代理分润月结','级差佣金月结','充正垫付','台账补回','站点利润分配','总站分润','冲正/回退'];

@@ -212,6 +212,35 @@ function accountingAccountFlowMappingRows(){
     ]);
 }
 
+function accountingEntryEffectText(row){
+  const account = accountingValue(row,'科目名称') || '账户/台账';
+  const direction = accountFlowDirectionLabel(accountingValue(row,'借贷/控制方向'));
+  if(account.includes('资金池额度')) return `额度控制项${direction}`;
+  if(account.includes('资金池')) return `资金池余额${direction}`;
+  if(account.includes('余额')) return `账户余额${direction}`;
+  if(account.includes('应收')) return `应收台账${direction}`;
+  if(account.includes('应付')) return `应付台账${direction}`;
+  if(account.includes('成本')) return `成本科目${direction}`;
+  if(account.includes('收入')) return `收入科目${direction}`;
+  if(account.includes('手续费')) return `手续费清算${direction}`;
+  return `${account}${direction}`;
+}
+
+function accountingAccountFlowSummaryRows(){
+  return accountingEntries
+    .filter(row=>accountingValue(row,'当前是否覆盖') !== '否' || accountingValue(row,'源表').includes('account'))
+    .slice(0, 40)
+    .map(row=>[
+      accountingValue(accountingTemplateMap[accountingValue(row,'模板编码')],'业务名称'),
+      accountingValue(row,'主体'),
+      accountingValue(row,'科目名称'),
+      accountFlowDirectionLabel(accountingValue(row,'借贷/控制方向')),
+      financeFriendlyAmountLabel(accountingValue(row,'金额表达式')),
+      accountingEntryEffectText(row),
+      accountingValue(row,'当前是否覆盖'),
+    ]);
+}
+
 function accountingSubjectType(subject, accountName=''){
   const text = `${subject} ${accountName}`;
   if(text.includes('总站')) return '总站';
@@ -272,7 +301,7 @@ function accountFlowToolbar(){
     `<select class="select" id="accountFlowSubjectFilter" onchange="filterAccountFlow()"><option>主体类型</option>${accountSubjectTypeOptions.map(o=>`<option>${o}</option>`).join('')}</select>`,
     `<select class="select" id="accountFlowBusinessFilter" onchange="filterAccountFlow()"><option>业务类型</option>${businessOptions.map(o=>`<option>${o}</option>`).join('')}</select>`,
     `<select class="select" id="accountFlowStatusFilter" onchange="filterAccountFlow()"><option>流水状态</option><option>通过</option><option>待复核</option><option>部分</option></select>`,
-    `<input class="input" id="accountFlowKeyword" placeholder="模板编码 / 源表 / 科目编码" oninput="filterAccountFlow()" />`
+    `<input class="input" id="accountFlowKeyword" placeholder="业务名称 / 主体 / 账户" oninput="filterAccountFlow()" />`
   ],'<button class="btn primary">导出账户流水</button>');
 }
 

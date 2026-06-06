@@ -151,15 +151,15 @@ const pages = {
     `,'流水中心 / 收银流水')
   },
   'account-flow'(){
-    return pageShell('账户流水','按 v4 模板和分录来源查看每一次余额或控制台账变化。账户流水必须包含变动前余额、发生额、变动后余额、来源ID、验签结果。',`
+    return pageShell('账户流水','按主体查看每一次余额或控制台账变化。主列表只保留财务看账必要字段，追溯编号和底层来源放到详情链路里。',`
       <div class="card">
         ${accountFlowToolbar()}
         <div id="accountFlowTable">${renderAccountFlowTable()}</div>
       </div>
       <div class="card" style="margin-top:16px">
-        <h3>v4 源表字段与余额/控制台账映射</h3>
-        <div class="ok-box" style="margin-bottom:14px">资金池口径：fund_pool.balance 是余额流水；fund_pool.fund_pool_balance 是额度/最高可提现控制项，必须单独验签，不进入正式借贷平衡。</div>
-        ${renderTable(['模板编码','业务名称','主体','科目名称','借贷/控制方向','金额表达式','源表','源字段','当前是否覆盖','当前系统事实'], accountingAccountFlowMappingRows(), '<button class="btn" onclick="openTrace(\'BALANCE-LEDGER\')">追踪</button>')}
+        <h3>v4 余额/控制台账口径</h3>
+        <div class="ok-box" style="margin-bottom:14px">资金池口径：fund_pool.balance 是余额流水；fund_pool.fund_pool_balance 是额度/最高可提现控制项。主表隐藏底层来源和技术编码，追踪时再展开。</div>
+        ${renderTable(['业务类型','主体','账户/科目','方向','金额口径','财务影响','覆盖状态'], accountingAccountFlowSummaryRows(), '<button class="btn" onclick="openTrace(\'BALANCE-LEDGER\')">追踪</button>')}
       </div>
     `,'流水中心 / 账户流水')
   },

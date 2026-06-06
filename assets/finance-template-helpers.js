@@ -66,13 +66,64 @@ function accountFlowDateMatched(dateText, filter){
   if(filter === '本月') return day.startsWith('2026-05');
   return true;
 }
+function financeFriendlyAmountLabel(value){
+  const text = String(value || '').trim();
+  const exact = {
+    G:'交易毛额',
+    F:'手续费',
+    A:'实际入账',
+    W:'提现金额',
+    N:'实际出款',
+    bonus:'奖励金额',
+    commission:'佣金金额',
+    settle:'月结金额',
+    mainShare:'总站分润',
+    siteShare:'站点分润',
+    rent:'月租',
+    VF:'场馆费用',
+    OF:'运营/手续费分摊'
+  };
+  if(exact[text]) return exact[text];
+  if(text === 'G/F/A') return '交易毛额 / 手续费 / 实际入账';
+  if(text === 'W/F/N') return '提现金额 / 手续费 / 实际出款';
+  if(text.includes('settle')) return '月结账单金额';
+  if(text.includes('commission')) return '佣金金额';
+  if(text.includes('bonus')) return '奖励金额';
+  if(text.includes('fee') || text.includes('Fee')) return '费用金额';
+  if(/[A-Za-z_*()]/.test(text)) return '按业务规则计算';
+  return text || '-';
+}
+function accountFlowDirectionLabel(direction){
+  const text = String(direction || '');
+  const map = {借:'借方', 贷:'贷方', 增加:'增加', 减少:'减少', 冻结:'冻结', 解冻:'解冻', 控制:'控制', 状态变更:'状态变更'};
+  return map[text] || text || '-';
+}
+function accountFlowEffectText(row){
+  const account = String(row[8] || '账户/台账');
+  const direction = accountFlowDirectionLabel(row[9]);
+  if(account.includes('资金池额度')) return `额度控制项${direction}`;
+  if(account.includes('资金池')) return `资金池余额${direction}`;
+  if(account.includes('余额')) return `账户余额${direction}`;
+  if(account.includes('应收')) return `应收台账${direction}`;
+  if(account.includes('应付')) return `应付台账${direction}`;
+  if(account.includes('成本')) return `成本科目${direction}`;
+  if(account.includes('收入')) return `收入科目${direction}`;
+  if(account.includes('手续费')) return `手续费清算${direction}`;
+  return `${account}${direction}`;
+}
 function renderAccountFlowTable(rows=accountFlowRowsWithDate()){
   const displayRows = rows.map(row=>[
-    ...row.slice(0,14),
-    postingDetailIdFor(row[13], row[8]),
+    row[0],
+    row[5],
+    row[6],
+    row[2],
+    row[8],
+    accountFlowDirectionLabel(row[9]),
+    financeFriendlyAmountLabel(row[10]),
+    accountFlowEffectText(row),
     row[14]
   ]);
-  return renderTable(['日期','流水ID','业务类型','来源模块','业务单号','主体类型','主体','账户ID','账户类型','方向','发生额','变动前','变动后','来源ID','分录明细ID','验签'], displayRows, '<button class="btn" onclick="openTrace(\'CASH202605280001\')">追踪</button>');
+  return renderTable(['时间','主体类型','主体','业务类型','账户/科目','方向','金额口径','余额/台账影响','状态'], displayRows, '<button class="btn" onclick="openTrace(\'CASH202605280001\')">追踪</button>');
 }
 function accountBalanceLedgerRows(){
   return [
