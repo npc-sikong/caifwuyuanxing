@@ -1,4 +1,4 @@
-const accountingTemplateMap = Object.fromEntries(accountingTemplates.map(row=>[row['模板编码'], row]));
+var accountingTemplateMap = Object.fromEntries(accountingTemplates.map(row=>[row['模板编码'], row]));
 
 function accountingValue(row, key, fallback=''){
   const value = row?.[key];
