@@ -127,6 +127,19 @@ function accountingEntryKind(row){
   return isFormalAccountingEntry(row) ? '正式分录' : '控制台账';
 }
 
+function accountingEntryAmountLabel(row){
+  const amount = accountingValue(row,'金额表达式');
+  const friendly = financeFriendlyAmountLabel(amount);
+  return friendly && friendly !== amount ? `${friendly}（${amount}）` : amount || '-';
+}
+
+function accountingEntrySideAmount(row, side){
+  const direction = accountingValue(row,'借贷/控制方向');
+  if(side === 'debit') return direction === '借' ? accountingEntryAmountLabel(row) : '-';
+  if(side === 'credit') return direction === '贷' ? accountingEntryAmountLabel(row) : '-';
+  return !['借','贷'].includes(direction) ? accountingEntryAmountLabel(row) : '-';
+}
+
 function accountingLedgerReportRows(){
   return accountingEntries.map(row=>{
     const code = accountingValue(row,'模板编码');
@@ -143,6 +156,11 @@ function accountingLedgerReportRows(){
       accountingValue(row,'科目名称'),
       accountingValue(row,'科目类型'),
       accountingValue(row,'金额表达式'),
+      accountingEntryAmountLabel(row),
+      accountingEntrySideAmount(row, 'debit'),
+      accountingEntrySideAmount(row, 'credit'),
+      accountingEntrySideAmount(row, 'control'),
+      accountingEntryEffectText(row),
       accountingValue(row,'主体'),
       accountingValue(row,'来源/去向'),
       `${accountingValue(row,'源表')}.${accountingValue(row,'源字段')}`,

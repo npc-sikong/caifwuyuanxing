@@ -176,7 +176,7 @@ const pages = {
       <div class="card">
         ${toolbar([select('主账单',templateCodes().map(code=>accountingMainOrderNo(code))),select('分录性质',['正式分录','控制台账']),select('覆盖状态',['已覆盖','部分覆盖','未实现','需补记','控制台账']),input('主订单号 / 子订单号 / 科目 / 源表')],'<button class="btn primary">导出分录报表</button>')}
         <div class="ledger-report-table">
-          ${renderTable(['主订单号','子订单号','分录序号','模板编码','业务名称','借贷/控制方向','科目编码','科目名称','科目类型','金额表达式','主体','来源/去向','源表字段','分录性质','覆盖状态','当前系统事实'], accountingLedgerReportRows(), '<button class="btn" onclick="openTrace(\'TPL-MDEP-001\')">追踪</button>')}
+          ${renderTable(['主订单号','子订单号','分录序号','模板编码','业务名称','借贷/控制方向','科目编码','科目名称','科目类型','金额表达式','额度口径','借方额度','贷方额度','控制额度','余额/额度影响','主体','来源/去向','源表字段','分录性质','覆盖状态','当前系统事实'], accountingLedgerReportRows(), '<button class="btn" onclick="openTrace(\'TPL-MDEP-001\')">追踪</button>')}
         </div>
       </div>
       <div class="card" style="margin-top:16px">
