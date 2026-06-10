@@ -13,6 +13,8 @@ const pages = {
         ${metric('流水入账率','92.31%','13 笔流水 / 12 笔已入账','率','blue')}
         ${metric('异常总数','15 项','断链 1 / 对账 7 / 待审 7','!','red')}
       </div>
+      <div style="margin-top:16px">${fundImpactCards()}</div>
+      ${fundCompletionBox('dashboard')}
       <div class="grid grid-2" style="margin-top:16px">
         <div class="card"><h3>账户余额总览</h3>${renderTable(['日期','账户类别','账户数量','余额合计','冻结金额','可用金额','状态'], datedRows([
           ['总站','3','¥ 21,000,000.00','¥ 0.00','¥ 21,000,000.00','正常'],
@@ -75,15 +77,21 @@ const pages = {
   },
   'account-list'(){
     return pageShell('账户列表','查看会员、代理、站点、平台、三方渠道、三方场馆等账户。这里是所有余额类、往来类、信用/欠款类账户的入口，并明确哪些账户允许出现欠款。',`
+      ${fundCompletionBox('account-list')}
       ${accountSummaryCards('总站')}
       <div class="card">
         ${toolbar([accountFilterSelect('总站'),select('账户状态',['正常','关注','冻结','待对账']),input('账户ID / 名称')],'<button class="btn primary">新增账户</button>')}
         <div id="accountListTable">${renderAccountListTable('总站')}</div>
       </div>
+      <div class="card" style="margin-top:16px">
+        <h3>资金模块账户口径</h3>
+        ${renderTable(['主体分类','资金模块','资金性质','当前表/字段','是否正式资金','关键说明'], fundBalanceReportRows(), '<button class="btn" onclick="go(\'account-flow\')">流水</button>')}
+      </div>
     `,'账户中心 / 账户列表')
   },
   'account-detail'(){
     return pageShell('账户详情','查看单个账户的余额、冻结金额、可用金额、信用账户、流水明细，并能追到每一笔变动的来源流水、记账批次和验签结果。',`
+      ${fundCompletionBox('account-detail')}
       <div class="split">
         <div class="card">
           <h3>账户档案</h3>
@@ -132,6 +140,9 @@ const pages = {
             ['投注返水收益','1','96.60','¥ 0.00','¥ 0.00','BATCH202605280017','已完成'],
             ['提现/下分','1','500.00','¥ 0.00','¥ 0.00','BATCH202605280002','已完成']
           ], '2026-05-30 10:30'))}
+          <div style="height:14px"></div>
+          <h3>账户相关待补账本影响</h3>
+          ${renderTable(['主订单号','子订单号','动作编号','账变动作','主体','资金模块','表/字段','方向','金额口径','分录性质','覆盖程度','当前落表','补记说明'], fundSupplementLedgerRows(10), '<button class="btn" onclick="go(\'entry-detail\')">分录</button>')}
         </div>
       </div>
     `,'账户中心 / 账户详情')
@@ -152,6 +163,7 @@ const pages = {
   },
   'account-flow'(){
     return pageShell('账户流水','按主体查看每一次余额或控制台账变化。主列表只保留财务看账必要字段，追溯编号和底层来源放到详情链路里。',`
+      ${fundCompletionBox('account-flow')}
       <div class="card">
         ${accountFlowToolbar()}
         <div id="accountFlowTable">${renderAccountFlowTable()}</div>
@@ -161,12 +173,17 @@ const pages = {
         <div class="ok-box" style="margin-bottom:14px">资金池口径：fund_pool.balance 是余额流水；fund_pool.fund_pool_balance 是额度/最高可提现控制项。主表隐藏底层来源和技术编码，追踪时再展开。</div>
         ${renderTable(['业务类型','主体','账户/科目','方向','金额口径','财务影响','覆盖状态'], accountingAccountFlowSummaryRows(), '<button class="btn" onclick="openTrace(\'BALANCE-LEDGER\')">追踪</button>')}
       </div>
+      <div class="card" style="margin-top:16px">
+        <h3>账变动作资金影响流水</h3>
+        ${renderTable(['动作编号','账变动作','主体','资金模块','方向','金额口径','表/字段','是否实际落表','覆盖程度'], fundAccountFlowRows(80), '<button class="btn" onclick="go(\'template-version\')">矩阵</button>')}
+      </div>
     `,'流水中心 / 账户流水')
   },
   'entry-detail'(){
     const formalCount = accountingEntries.filter(isFormalAccountingEntry).length;
     const controlCount = accountingEntries.length - formalCount;
     return pageShell('会计分录','按 v4 会计分录页签生成真实记账报表。一个模板主账单下按分录步骤生成多条子账单，每条记录只代表一个账本或控制台账影响。',`
+      ${fundCompletionBox('entry-detail')}
       <div class="grid grid-4" style="margin-bottom:16px">
         ${metric('主账单',`${accountingTemplates.length} 个`,'按模板编码生成','主','blue')}
         ${metric('子分录',`${accountingEntries.length} 条`,'一行一个账本影响','子','green')}
@@ -180,6 +197,10 @@ const pages = {
         </div>
       </div>
       <div class="card" style="margin-top:16px">
+        <h3>资金影响待补账子分录</h3>
+        ${renderTable(['主订单号','子订单号','动作编号','账变动作','主体','资金模块','表/字段','方向','金额口径','分录性质','覆盖程度','当前落表','补记说明'], fundSupplementLedgerRows(), '<button class="btn" onclick="go(\'book-batch\')">补记批次</button>')}
+      </div>
+      <div class="card" style="margin-top:16px">
         <h3>主账单汇总</h3>
         ${renderTable(['主订单号','模板编码','业务名称','触发状态','子分录数','正式分录','控制台账','借贷行数','覆盖状态','补记建议'], accountingMainBillRows(), '<button class="btn" onclick="openTemplateStepDetail(\'TPL-MDEP-001\')">分录详情</button>')}
       </div>
@@ -191,6 +212,7 @@ const pages = {
   },
   'book-batch'(){
     return pageShell('记账批次','按 v4 凭证规则查看批次生成口径。VCH 规则定义触发时点、借方行、贷方行、控制台账、幂等键和失败/冲正处理。',`
+      ${fundCompletionBox('book-batch')}
       <div class="grid grid-4" style="margin-bottom:16px">
         ${metric('凭证规则',`${accountingVoucherRules.length} 条`,'VCH-001 至 VCH-021','凭','blue')}
         ${metric('业务映射',`${accountingBusinessMappingMatrix.length} 条`,'业务账变到模板','映','green')}
@@ -206,6 +228,10 @@ const pages = {
         ${renderTable(['映射ID','源表','源类型字段','源类型值','业务事件','模板编码','是否正式凭证','凭证规则','补充表/账本','核销对象','备注'], accountingBusinessMappingRows(),'<button class="btn" onclick="go(\'template-version\')">模板</button>')}
       </div>
       <div class="card" style="margin-top:16px">
+        <h3>账变矩阵补记批次建议</h3>
+        ${renderTable(['补记批次','动作编号','账变动作','待补影响数','涉及资金模块','缺口结构','处理建议','状态'], fundSupplementBatchRows(), '<button class="btn" onclick="go(\'internal-reconcile\')">治理</button>')}
+      </div>
+      <div class="card" style="margin-top:16px">
         <h3>财务补全验收摘要</h3>
         ${renderTable(['风险编号','财务补全模块','优先级','必须补的账本/表','触发业务/时点','需要落账的数据','标准借贷/控制口径','验收标准','关联模板'], accountingFinanceRequirementRows(), '<button class="btn" onclick="go(\'internal-reconcile\')">对账</button>')}
       </div>
@@ -216,10 +242,11 @@ const pages = {
   },
   'template-version'(){
     return pageShell('模板版本管理','模板中心唯一入口，按 v4 财务规则工作台展示模板列表、分录详情、科目、系统账变、凭证映射、核销验收。',`
+      ${fundCompletionBox('template-version')}
       <div class="relation-brief">
         <div class="relation-item"><strong>v4 底稿</strong><span>72 个模板、185 条分录、38 个科目、41 条系统账变映射已作为当前展示底稿。</span></div>
         <div class="relation-item"><strong>财务口径</strong><span>主界面只展示财务规则、凭证关系、核销关系和验收口径，不突出真实后端代码实现。</span></div>
-        <div class="relation-item"><strong>立即生效</strong><span>模板是规则配置，不输入具体金额；分录步骤保存后直接生效，并写操作日志。</span></div>
+        <div class="relation-item"><strong>资金影响矩阵</strong><span>新增 50 个账变动作、177 条资金影响、24 个资金模块和 15 个缺口项，作为补记治理依据。</span></div>
       </div>
       ${renderTemplateVersionTabs()}
       <div id="templateVersionTabContent">
@@ -321,11 +348,16 @@ const pages = {
   },
   'internal-reconcile'(){
     return pageShell('内部对账','按 v4 风险清单与核销关系校验业务单、凭证规则、会计分录、账户流水、账户余额和控制台账是否一致。',`
+      ${fundCompletionBox('internal-reconcile')}
       <div class="grid grid-4">
         ${metric('v4 风险',`${accountingRisks.length} 条`,'RISK-001 至 RISK-014','险','red')}
         ${metric('核销关系',`${accountingReconciliationRules.length} 条`,'REC 规则已接入','核','orange')}
-        ${metric('P0 风险',`${accountingFinanceRequirementSummaryRows.filter(row=>accountingValue(row,'优先级')==='P0').length} 条`,'优先治理','P0','purple')}
-        ${metric('验收项',`${accountingFinanceAcceptanceRows.length} 条`,'财务验收口径','验','green')}
+        ${metric('矩阵缺口',`${fundGapItems.length} 条`,`P0 ${fundImpactSummary().p0} / P1 ${fundImpactSummary().p1}`,'缺','purple')}
+        ${metric('待补影响',`${fundImpactSummary().missingDetails} 条`,'否/部分覆盖','补','green')}
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h3>账变矩阵缺口与待确认</h3>
+        ${renderTable(['编号','缺口/待确认','影响动作','当前代码事实','风险','建议','优先级','源码依据'], fundGapRows(), '<button class="btn" onclick="go(\'book-batch\')">补记</button>')}
       </div>
       <div class="card" style="margin-top:16px">
         <h3>风险清单与核销关系</h3>
@@ -343,6 +375,7 @@ const pages = {
   },
   'third-reconcile'(){
     return pageShell('三方对账','突出 v4 中三方支付应收、提现待付、手续费清算、官方账户、场馆费应付等外部资金关系。总站额度调整不进入本页。',`
+      ${fundCompletionBox('third-reconcile')}
       <div class="grid grid-3">
         ${metric('支付渠道差异','¥ 120.00','手续费手算待核','支','orange')}
         ${metric('场馆费应付',`${accountingThirdReconciliationRuleRows().length} 项`,'含官方/场馆核销','场','purple')}
@@ -354,6 +387,10 @@ const pages = {
         ${renderTable(['模板编码','业务名称','科目名称','主体','来源/去向','金额表达式','源表','当前是否覆盖'], accountingThirdReconcileRows(), '<button class="btn">处理差异</button>')}
       </div>
       <div class="card" style="margin-top:16px">
+        <h3>外部资金缺口</h3>
+        ${renderTable(['编号','缺口/待确认','影响动作','当前代码事实','建议','优先级'], fundThirdReconcileRows(), '<button class="btn" onclick="go(\'internal-reconcile\')">治理</button>')}
+      </div>
+      <div class="card" style="margin-top:16px">
         <h3>三方相关核销口径</h3>
         ${renderTable(['核销ID','核销对象','借方/资产端','贷方/负债端','触发核销','核销键','允许部分核销','差异处理','状态','验收标准'], accountingThirdReconciliationRuleRows(), '<button class="btn" onclick="go(\'internal-reconcile\')">核销</button>')}
       </div>
@@ -361,6 +398,7 @@ const pages = {
   },
   'balance-report'(){
     return pageShell('资产负债统计','按 v4 的 38 个科目统计资产、负债、收入、成本和控制类科目。控制类独立列示，不进入正式资产负债。',`
+      ${fundCompletionBox('balance-report')}
       <div class="grid grid-4">
 		        ${metric('资产科目',`${accountingSubjects.filter(row=>accountingValue(row,'科目类型')==='资产').length} 个`,'来自 v4 科目表','资','blue')}
 		        ${metric('负债科目',`${accountingSubjects.filter(row=>accountingValue(row,'科目类型')==='负债').length} 个`,'会员/代理/站点余额','负','orange')}
@@ -371,10 +409,15 @@ const pages = {
       <div class="card" style="margin-top:16px">
         ${renderTable(['科目类型','科目数量','科目范围','对应主体','对应系统字段/表'], accountingBalanceRows())}
       </div>
+      <div class="card" style="margin-top:16px">
+        <h3>资金模块正式报表口径</h3>
+        ${renderTable(['主体分类','资金模块','资金性质','当前表/字段','是否正式资金','关键说明'], fundBalanceReportRows(), '<button class="btn" onclick="go(\'subject-config\')">科目</button>')}
+      </div>
     `,'报表中心 / 资产负债统计')
   },
   'income-cost-report'(){
     return pageShell('收入成本统计','按 v4 分录中的收入/成本科目统计损益。手续费默认不是平台收入，需先区分三方手续费清算、官方账户现金流和费用承担方。',`
+      ${fundCompletionBox('income-cost-report')}
       <div class="grid grid-4">
         ${metric('收入分录',`${accountingIncomeCostRows().filter(row=>row[4]==='收入').length} 条`,'v4 正式/覆盖口径','收','green')}
         ${metric('成本分录',`${accountingIncomeCostRows().filter(row=>row[4]==='成本').length} 条`,'v4 正式/覆盖口径','成','blue')}
@@ -386,6 +429,10 @@ const pages = {
       </div>
       <div class="ok-box" style="margin-top:16px">v4 口径：红包待领负债、奖励成本、预付金、站点月结应收/核销、场馆费应付都要按正式凭证或控制台账分开展示。</div>
       <div class="card" style="margin-top:16px">
+        <h3>账变矩阵收入成本影响</h3>
+        ${renderTable(['动作编号','账变动作','主体','资金模块','方向','金额口径','是否实际落表','备注'], fundIncomeCostRows(), '<button class="btn" onclick="go(\'entry-detail\')">分录</button>')}
+      </div>
+      <div class="card" style="margin-top:16px">
         <h3>收入/成本来源分录明细</h3>
         ${renderTable(['模板编码','业务名称','行号','借贷/控制方向','科目编码','科目名称','科目类型','金额表达式','主体','当前系统事实'], accountingEntryDisplayRows().filter(row=>['收入','成本'].includes(row[6])).map(row=>[row[0],row[1],row[2],row[3],row[4],row[5],row[6],row[7],row[8],row[14]]), '<button class="btn" onclick="go(\'entry-detail\')">分录</button>')}
       </div>
@@ -393,10 +440,15 @@ const pages = {
   },
   'signature-check'(){
     return pageShell('验签校验','检查余额流水是否被篡改。任何直接改数据库金额、跳过收银流水或补写不完整链路的行为都应该导致验签失败并触发告警。',`
+      ${fundCompletionBox('signature-check')}
       <div class="grid grid-3">
         ${metric('今日校验流水','128,904','覆盖全部账户流水','验','blue')}
         ${metric('验签失败','1','疑似人工改库','!','red')}
         ${metric('余额重算通过率','99.99%','1 个账户待处理','✓','green')}
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h3>缺口治理验签关注项</h3>
+        ${renderTable(['编号','缺口/待确认','影响动作','当前代码事实','风险','建议','优先级','源码依据'], fundGapRows().filter(row=>String(row[4]).includes('无法') || String(row[4]).includes('绕过') || String(row[4]).includes('重复') || String(row[1]).includes('旧会员调账')), '<button class="btn" onclick="go(\'internal-reconcile\')">对账</button>')}
       </div>
       <div class="card" style="margin-top:16px">
         ${renderTable(['日期','流水ID','账户ID','来源/变更ID','发生额','前余额','后余额','验签结果','风险等级'], datedRows([
@@ -413,6 +465,7 @@ const pages = {
   },
   'operation-log'(){
     return pageShell('操作日志','记录谁操作、谁审批、何时生效。模板配置保存后直接生效，也必须在这里留痕；调账、冲正、账户冻结、验签告警、三方差异处理等动作必须可审计。',`
+      ${fundCompletionBox('operation-log')}
       <div class="card">
 	        ${toolbar([select('操作类型',['财务请求','调账申请','总站资金调拨','审批','冲正','撤销分账','模板配置','月结生成','月结审批','风控中间件','月度盘账','账户冻结','登录']),select('角色',['财务','主管','风控','技术运维','系统']),input('操作人 / 单号')],'<button class="btn primary">导出日志</button>')}
 	        ${renderTable(['时间','操作人','角色','操作类型','对象','结果','IP','备注'],[
@@ -434,13 +487,22 @@ const pages = {
           ['2026-05-28 14:20:02','risk01','风控','冻结账户','U10006','成功','10.8.1.33','疑似套利']
         ],'<button class="btn">详情</button>')}
       </div>
+      <div class="card" style="margin-top:16px">
+        <h3>补记治理日志口径</h3>
+        ${renderTable(['补记批次','动作编号','账变动作','待补影响数','涉及资金模块','缺口结构','处理建议','状态'], fundSupplementBatchRows().slice(0,12), '<button class="btn">留痕</button>')}
+      </div>
     `,'风控审计 / 操作日志')
   },
   'subject-config'(){
     return pageShell('科目配置','配置 v4 的资产、负债、收入、成本和控制类科目，以及借贷方向规则。所有模板最终都要落到这些科目或控制台账上。',`
+      ${fundCompletionBox('subject-config')}
       <div class="grid grid-2">
         <div class="card"><h3>v4 会计科目表</h3>${renderTable(['科目编码','科目名称','科目类型','增加方向','减少方向','对应主体','对应系统字段/表','是否进正式分录','备注'], accountingSubjectConfigRows())}</div>
         <div class="card"><h3>科目类型汇总</h3>${renderTable(['科目类型','科目数量','科目范围','对应主体','对应系统字段/表'], accountingBalanceRows())}</div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h3>资金模块字典</h3>
+        ${renderTable(['主体分类','资金模块','当前表/字段','资金性质','增加含义','减少含义','是否正式资金','关键说明'], fundModuleDictionaryRows(), '<button class="btn" onclick="go(\'template-version\')">矩阵</button>')}
       </div>
     `,'系统配置 / 科目配置')
   },

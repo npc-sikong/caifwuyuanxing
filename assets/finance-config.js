@@ -190,6 +190,30 @@ const functionDocs = {
   }
 };
 
+const fundMatrixDocAdditions = {
+  dashboard:'资金看板新增账变动作矩阵总览，用 50 个动作、177 条资金影响、24 个资金模块和 15 个缺口项衡量财务中心闭环完整度。',
+  'account-list':'账户列表新增资金模块字典口径，账户分类需要能对应正式资金、业务单、控制台账或待补资金模块。',
+  'account-detail':'账户详情新增待补账本影响视角，单账户余额需要能解释已落账、部分覆盖和待补账来源。',
+  'account-flow':'账户流水新增账变动作资金影响流水，按动作编号、主体、资金模块、表字段展示余额或控制台账影响。',
+  'entry-detail':'会计分录新增资金影响补记明细，未实际落表或部分覆盖的资金影响只作为待补账子分录展示。',
+  'book-batch':'记账批次新增补记批次建议，按动作编号聚合待补账本并给出补记处理方向。',
+  'template-version':'模板版本管理新增资金影响矩阵切页，展示动作总览、资金影响明细和缺口清单。',
+  'internal-reconcile':'内部对账新增 15 项缺口与待确认清单，P0 缺口优先进入补记治理。',
+  'third-reconcile':'三方对账新增官方账户、三方通道、手续费、提现待付和场馆费等外部资金缺口。',
+  'balance-report':'资产负债统计新增资金模块正式报表口径，明确控制额度不重复计入现金资产。',
+  'income-cost-report':'收入成本统计新增账变矩阵损益影响，区分已落表损益和待补损益。',
+  'signature-check':'验签校验新增缺口治理关注项，用于识别绕过正式账本、人工改库或来源缺失。',
+  'operation-log':'操作日志新增补记治理留痕口径，缺口处理必须记录动作编号、资金模块和处理结果。',
+  'subject-config':'科目配置新增资金模块字典，帮助会计科目、系统字段和正式资金属性建立映射。'
+};
+Object.keys(fundMatrixDocAdditions).forEach(key=>{
+  if(functionDocs[key]){
+    functionDocs[key].rules = [...functionDocs[key].rules, fundMatrixDocAdditions[key]];
+    functionDocs[key].fields = [...functionDocs[key].fields, '本次补全字段：动作编号、账变动作、主体、资金模块、表/字段、是否实际落表、覆盖程度、缺口优先级。'];
+    functionDocs[key].exceptions = [...functionDocs[key].exceptions, '未实际落表或部分覆盖的影响只能标记为待补账/补记建议，不得混入正式已入账分录。'];
+  }
+});
+
 const quotaTemplateRows = [
   ['HQ_POOL_INCREASE','总站资金调入模板','总站给站点/代理/会员调入真实资金','V1.0','已启用'],
   ['HQ_POOL_DECREASE','总站资金调出模板','总站给站点/代理/会员调出真实资金','V1.0','已启用']

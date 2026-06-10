@@ -63,6 +63,7 @@ function filterAccountFlow(){
 const templateVersionTabs = [
   ['list','模板列表'],
   ['steps','分录详情编辑台'],
+  ['fund-impact','资金影响矩阵'],
   ['subjects','会计科目表'],
   ['mapping','系统账变映射'],
   ['voucher','凭证/业务映射'],
@@ -126,6 +127,9 @@ function renderTemplateVersionSubjectTab(){
     </div>
   `;
 }
+function renderTemplateVersionFundImpactTab(){
+  return renderFundImpactTemplateTab();
+}
 function renderTemplateVersionMappingTab(){
   return `
     <div class="card">
@@ -163,6 +167,7 @@ function renderTemplateVersionReconcileTab(){
 }
 function renderTemplateVersionTabContent(tab=templateVersionActiveTab){
   if(tab === 'steps') return renderTemplateVersionStepTab();
+  if(tab === 'fund-impact') return renderTemplateVersionFundImpactTab();
   if(tab === 'subjects') return renderTemplateVersionSubjectTab();
   if(tab === 'mapping') return renderTemplateVersionMappingTab();
   if(tab === 'voucher') return renderTemplateVersionVoucherTab();
